@@ -24,13 +24,31 @@
       --muted:       #8a6a45;
       --rule:        #c4a97a;
 
-      /* Marge autour de la carte : la carte occupe tout le reste de l'écran */
-      --pad: clamp(10px, 2.2vw, 28px);
+      /* Grain de papier des popups et des fiches : fibres fines + marbrures douces */
+      --paper: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27240%27 height=%27240%27%3E%3Cfilter id=%27n%27 x=%270%27 y=%270%27 width=%27240%27 height=%27240%27 filterUnits=%27userSpaceOnUse%27%3E%3CfeTurbulence type=%27fractalNoise%27 baseFrequency=%270.75%27 numOctaves=%272%27 seed=%273%27 stitchTiles=%27stitch%27/%3E%3CfeColorMatrix values=%270 0 0 0 0.42  0 0 0 0 0.3  0 0 0 0 0.16  0 0 0 0.46 -0.17%27/%3E%3C/filter%3E%3Crect width=%27240%27 height=%27240%27 filter=%27url(%23n)%27/%3E%3C/svg%3E"),
+               url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27400%27 height=%27400%27%3E%3Cfilter id=%27n%27 x=%270%27 y=%270%27 width=%27400%27 height=%27400%27 filterUnits=%27userSpaceOnUse%27%3E%3CfeTurbulence type=%27fractalNoise%27 baseFrequency=%270.02%27 numOctaves=%273%27 seed=%278%27 stitchTiles=%27stitch%27/%3E%3CfeColorMatrix values=%270 0 0 0 0.55  0 0 0 0 0.4  0 0 0 0 0.2  0 0 0 0.28 -0.065%27/%3E%3C/filter%3E%3Crect width=%27400%27 height=%27400%27 filter=%27url(%23n)%27/%3E%3C/svg%3E");
+      /* Bords du papier légèrement plus foncés */
+      --paper-edge: inset 0 0 22px rgba(139, 105, 60, 0.14);
+
+      /* Largeur maximale de la carte (900px = taille d'origine du site) */
+      --map-max: 900px;
+      /* Marge minimale autour de l'ensemble titre + carte */
+      --pad: clamp(16px, 2.2vw, 28px);
+      /* Marge ivoire (passe-partout) autour de la carte */
+      --mat: 10px;
+      /* Hauteur de la ligne de titre */
+      --title-h: 28px;
+      /* Hauteur disponible pour la carte, une fois le titre et les marges retirés */
+      --map-room: calc(100vh - 2 * var(--pad) - var(--title-h) - 2 * var(--mat) - 14px);
+    }
+    @supports (height: 100dvh) {
+      :root { --map-room: calc(100dvh - 2 * var(--pad) - var(--title-h) - 2 * var(--mat) - 14px); }
     }
 
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
     html {
+      background: #24170b;
       -webkit-text-size-adjust: 100%;
       text-size-adjust: 100%;
       /* l'onde des marqueurs placés au bord ne doit pas créer de défilement horizontal */
@@ -46,30 +64,81 @@
       align-items: center;
       justify-content: center;
       padding: var(--pad);
-      background: radial-gradient(ellipse at 50% 45%, #2a1d0d 0%, var(--bg) 62%, #110b04 100%) fixed var(--bg);
+      /* Table de cartographe : lumière de lampe, bords assombris, veinures du bois */
+      background-color: #2e1e0f;
+      background-image:
+        radial-gradient(ellipse at 50% 42%, rgba(255, 214, 150, 0.10) 0%, transparent 55%),
+        radial-gradient(ellipse at 50% 50%, transparent 35%, rgba(0, 0, 0, 0.65) 100%),
+        url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27500%27 height=%27500%27%3E%3Cfilter id=%27n%27 x=%270%27 y=%270%27 width=%27500%27 height=%27500%27 filterUnits=%27userSpaceOnUse%27%3E%3CfeTurbulence type=%27fractalNoise%27 baseFrequency=%270.004 0.06%27 numOctaves=%273%27 seed=%2711%27 stitchTiles=%27stitch%27/%3E%3CfeColorMatrix values=%270 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -0.7 0.5%27/%3E%3C/filter%3E%3Crect width=%27500%27 height=%27500%27 filter=%27url(%23n)%27/%3E%3C/svg%3E"),
+        linear-gradient(180deg, #3a2614, #2a1a0c);
+      background-size: auto, auto, 500px 500px, auto;
       font-family: 'IM Fell English', Georgia, serif;
       color: var(--ink);
     }
 
     /* ══════════════════════════════════════════════
        Carte
-       La largeur s'ajuste pour que la carte entière tienne dans la fenêtre,
-       en largeur comme en hauteur, quelle que soit la résolution.
+       Largeur : --map-max au plus, et réduite si la fenêtre est trop petite
+       (en largeur comme en hauteur) pour que la carte reste entière à l'écran.
        --map-ratio est recalculé en JS d'après les dimensions réelles de carte.jpg.
        ══════════════════════════════════════════════ */
-    .map-wrapper {
+    .stage {
       --map-ratio: 1.33333;
-      position: relative;
       flex: none;
-      width: min(100%, calc((100vh - 2 * var(--pad)) * var(--map-ratio)));
-      width: min(100%, calc((100dvh - 2 * var(--pad)) * var(--map-ratio)));
-      max-width: 2048px; /* au-delà, l'image serait agrandie et floue */
+      width: min(100%, var(--map-max), calc(var(--map-room) * var(--map-ratio)));
+      display: flex;
+      flex-direction: column;
+      gap: calc(var(--mat) + 14px);
+    }
+
+    /* ── Titre ── */
+    .page-title {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      height: var(--title-h);
+      margin: 0 calc(var(--mat) * -1);
+    }
+    .page-title h1 {
+      flex: none;
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      line-height: 1;
+      color: var(--parchment-2);
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+      white-space: nowrap;
+    }
+    .page-title::before,
+    .page-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(196, 169, 122, 0.75));
+    }
+    .page-title::after { background: linear-gradient(270deg, transparent, rgba(196, 169, 122, 0.75)); }
+
+    /* ── Carte, dans son passe-partout ivoire ── */
+    .map-wrapper {
+      position: relative;
+      width: 100%;
       aspect-ratio: var(--map-ratio);
       background: #c9cdb5;
       box-shadow:
-        0 0 0 3px var(--leather),
-        0 0 0 4px var(--ink-deep),
-        8px 10px 32px rgba(0, 0, 0, 0.7);
+        0 0 0 var(--mat) #ece3c9,
+        0 0 0 calc(var(--mat) + 1px) #b9a277,
+        0 0 0 calc(var(--mat) + 2px) var(--ink),
+        0 18px 40px rgba(0, 0, 0, 0.65),
+        0 4px 10px rgba(0, 0, 0, 0.4);
+    }
+    /* Bords de la carte légèrement assombris, comme un papier ancien */
+    .map-wrapper::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      box-shadow: inset 0 0 40px rgba(60, 40, 10, 0.28);
+      pointer-events: none;
     }
 
     .map-img {
@@ -96,7 +165,7 @@
        Les marqueurs « sortie » (lieux hors carte) ont en plus --dir : l'angle de la flèche.
        ══════════════════════════════════════════════ */
     .marker {
-      --size: 26px;
+      --size: 24px;
       --hit: 40px;
       position: absolute;
       left: var(--x);
@@ -160,7 +229,7 @@
     }
 
     /* Icône livre pour le bouton d'introduction */
-    .marker--info { --size: 32px; }
+    .marker--info { --size: 30px; }
     .marker-icon {
       width: 16px;
       height: 16px;
@@ -266,10 +335,11 @@
       width: min(var(--w, 380px), calc(100% - 16px));
       display: none;
       flex-direction: column;
-      background: var(--parchment);
+      background-color: var(--parchment);
+      background-image: var(--paper);
       border: 2px solid var(--leather);
       border-radius: 3px;
-      box-shadow: 4px 4px 0 var(--leather), 0 10px 32px rgba(0, 0, 0, 0.5);
+      box-shadow: var(--paper-edge), 4px 4px 0 var(--leather), 0 10px 32px rgba(0, 0, 0, 0.5);
       color: var(--ink);
     }
     .popup.active {
@@ -377,7 +447,8 @@
       position: absolute;
       width: 12px;
       height: 12px;
-      background: var(--parchment);
+      background-color: #eee6d3; /* ton du bord du papier, un peu plus foncé que le centre */
+      background-image: var(--paper);
       border: 2px solid var(--leather);
       transform: rotate(45deg);
     }
@@ -450,6 +521,9 @@
        Petits écrans : le popup devient un volet en bas de l'écran
        ══════════════════════════════════════════════ */
     @media (max-width: 640px) {
+      :root { --mat: 5px; --title-h: 20px; }
+      .page-title { gap: 10px; }
+      .page-title h1 { font-size: 15px; letter-spacing: 0.06em; }
       .marker { --size: 22px; --hit: 36px; }
       .marker--info { --size: 28px; }
 
@@ -462,7 +536,7 @@
         width: auto;
         max-height: 60vh;
         max-height: 60dvh;
-        box-shadow: 0 -2px 0 var(--leather), 0 -8px 30px rgba(0, 0, 0, 0.55);
+        box-shadow: var(--paper-edge), 0 -2px 0 var(--leather), 0 -8px 30px rgba(0, 0, 0, 0.55);
       }
       .popup::before { display: none; }
       .popup.active { animation: sheetIn 0.22s ease; }
@@ -527,10 +601,11 @@
       right: 0;
       -webkit-backface-visibility: hidden;
               backface-visibility: hidden;
-      background: var(--parchment);
+      background-color: var(--parchment);
+      background-image: var(--paper);
       border: 3px solid var(--leather);
       border-radius: 3px;
-      box-shadow: 0 0 0 1px var(--ink), 0 20px 60px rgba(0, 0, 0, 0.8);
+      box-shadow: var(--paper-edge), 0 0 0 1px var(--ink), 0 20px 60px rgba(0, 0, 0, 0.8);
     }
 
     .lightbox-front {
@@ -655,6 +730,12 @@
 </head>
 <body>
 
+<div class="stage" id="stage">
+
+<header class="page-title">
+  <h1>Traverse de Lameblanche</h1>
+</header>
+
 <main class="map-wrapper" id="mapWrapper">
   <img src="carte.jpg" alt="Carte de la traverse de Lameblanche" class="map-img" id="mapImg" width="2048" height="1536" />
 
@@ -672,47 +753,47 @@
     </button>
 
     <!-- Intérieur du glacier (yéti adulte) -->
-    <button type="button" class="marker" style="--x: 22.44%; --y: 16.12%; --c: #a63b2e;" data-popup="popup-yeti" aria-expanded="false">
+    <button type="button" class="marker" style="--x: 23.50%; --y: 16.20%; --c: #a63b2e;" data-popup="popup-yeti" aria-expanded="false">
       <span class="marker-disc"><span class="marker-gem"></span></span>
       <span class="marker-label">Intérieur du glacier</span>
     </button>
 
     <!-- Crevasse bouchée -->
-    <button type="button" class="marker" style="--x: 21.29%; --y: 35.33%; --c: #b49b6e;" data-popup="popup-crevasse" aria-expanded="false">
+    <button type="button" class="marker" style="--x: 21.23%; --y: 35.11%; --c: #b49b6e;" data-popup="popup-crevasse" aria-expanded="false">
       <span class="marker-disc"><span class="marker-gem"></span></span>
       <span class="marker-label">Crevasse bouchée</span>
     </button>
 
     <!-- Grotte des cultistes -->
-    <button type="button" class="marker lbl-right" style="--x: 11.48%; --y: 51.56%; --c: #7a9bbf;" data-popup="popup-grotte" aria-expanded="false">
+    <button type="button" class="marker lbl-right" style="--x: 11.22%; --y: 51.41%; --c: #7a9bbf;" data-popup="popup-grotte" aria-expanded="false">
       <span class="marker-disc"><span class="marker-gem"></span></span>
       <span class="marker-label">Grotte des cultistes</span>
     </button>
 
     <!-- Caverne explorée -->
-    <button type="button" class="marker" style="--x: 62.41%; --y: 39.93%; --c: #a63b2e;" data-popup="popup-caverne" aria-expanded="false">
+    <button type="button" class="marker" style="--x: 62.57%; --y: 39.64%; --c: #a63b2e;" data-popup="popup-caverne" aria-expanded="false">
       <span class="marker-disc"><span class="marker-gem"></span></span>
       <span class="marker-label">Caverne explorée</span>
     </button>
 
     <!-- Refuge abandonné -->
-    <button type="button" class="marker" style="--x: 77.27%; --y: 67.53%; --c: #4a9e6e;" data-popup="popup-refuge" aria-expanded="false">
+    <button type="button" class="marker" style="--x: 77.38%; --y: 67.56%; --c: #4a9e6e;" data-popup="popup-refuge" aria-expanded="false">
       <span class="marker-disc"><span class="marker-gem"></span></span>
       <span class="marker-label">Refuge abandonné</span>
     </button>
 
     <!-- Sorties (lieux hors carte) : la flèche indique la direction -->
-    <button type="button" class="marker marker--exit lbl-right" style="--x: 6.46%; --y: 85.52%; --dir: 180deg;" data-popup="popup-trouee" aria-expanded="false">
+    <button type="button" class="marker marker--exit lbl-right" style="--x: 7.44%; --y: 84.89%; --dir: 180deg;" data-popup="popup-trouee" aria-expanded="false">
       <span class="marker-disc"><span class="marker-gem"></span></span>
       <span class="marker-label">Trouée des Hauts-Laments</span>
     </button>
 
-    <button type="button" class="marker marker--exit lbl-left" style="--x: 81.82%; --y: 95.70%; --dir: 90deg;" data-popup="popup-patis" aria-expanded="false">
+    <button type="button" class="marker marker--exit lbl-left" style="--x: 82.67%; --y: 96.44%; --dir: 90deg;" data-popup="popup-patis" aria-expanded="false">
       <span class="marker-disc"><span class="marker-gem"></span></span>
       <span class="marker-label">Pâtis d'Ormefange</span>
     </button>
 
-    <button type="button" class="marker marker--exit lbl-left" style="--x: 97.90%; --y: 67.48%; --dir: 0deg;" data-popup="popup-golkoval" aria-expanded="false">
+    <button type="button" class="marker marker--exit lbl-left" style="--x: 97.57%; --y: 68.29%; --dir: 0deg;" data-popup="popup-golkoval" aria-expanded="false">
       <span class="marker-disc"><span class="marker-gem"></span></span>
       <span class="marker-label">Gol Koval</span>
     </button>
@@ -855,6 +936,8 @@
 
 </main><!-- /map-wrapper -->
 
+</div><!-- /stage -->
+
 
 <!-- ══════════════════════════════════════════════
      LIGHTBOXES
@@ -945,7 +1028,7 @@
   // ══════════════════════════════════════════════
   function onMapReady() {
     if (mapImg.naturalWidth && mapImg.naturalHeight) {
-      wrapper.style.setProperty('--map-ratio', (mapImg.naturalWidth / mapImg.naturalHeight).toFixed(5));
+      document.getElementById('stage').style.setProperty('--map-ratio', (mapImg.naturalWidth / mapImg.naturalHeight).toFixed(5));
     }
     wrapper.classList.add('is-ready');
     repositionPopup();

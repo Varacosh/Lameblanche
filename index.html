@@ -781,6 +781,178 @@
       }
       .marker:not(.is-seen) .marker-disc::after { display: none; }
     }
+
+    /* ══════════════════════════════════════════════
+       Musique d'ambiance (bouton au bout de la barre de titre)
+       ══════════════════════════════════════════════ */
+    :root { --snd: 30px; --snd-vol: 116px; }
+    /* Les filets du titre gardent la même longueur des deux côtés,
+       et raccourcissent ensemble quand le réglage du volume apparaît */
+    .page-title {
+      position: relative;
+      padding: 0 calc(var(--snd) + 14px);
+      transition: padding 0.35s ease;
+    }
+    .page-title.sound-open { padding: 0 calc(var(--snd) + var(--snd-vol) + 24px); }
+
+    .sound {
+      position: absolute;
+      right: 0;
+      top: 50%;
+      z-index: 40;              /* l'étiquette de survol passe au-dessus du cadre de la carte */
+      transform: translateY(-50%);
+      display: flex;
+      align-items: center;
+    }
+
+    .sound-btn {
+      position: relative;
+      flex: none;
+      width: var(--snd);
+      height: var(--snd);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      border: 1px solid rgba(196, 169, 122, 0.55);
+      border-radius: 50%;
+      background: rgba(20, 12, 4, 0.35);
+      color: var(--parchment-2);
+      cursor: pointer;
+      transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+    }
+    .sound-btn:hover { border-color: var(--parchment-2); background: rgba(20, 12, 4, 0.6); }
+    .sound-btn:focus-visible { outline: 2px solid var(--parchment-2); outline-offset: 3px; }
+    .sound-btn svg { width: 15px; height: 15px; }
+    .sound.is-playing .sound-btn {
+      border-color: var(--rule);
+      box-shadow: 0 0 0 3px rgba(196, 169, 122, 0.14);
+    }
+
+    /* Icônes : note au repos ; barres animées pendant la lecture ; pause au survol */
+    .sound-btn .ico-pause,
+    .sound-eq { display: none; }
+    .sound.is-playing .sound-btn .ico-note { display: none; }
+    .sound.is-playing .sound-eq { display: flex; }
+    .sound.is-playing .sound-btn:hover .sound-eq { display: none; }
+    .sound.is-playing .sound-btn:hover .ico-pause { display: block; }
+
+    .sound-eq {
+      align-items: flex-end;
+      gap: 2px;
+      height: 12px;
+    }
+    .sound-eq i {
+      display: block;
+      width: 2px;
+      height: 100%;
+      border-radius: 1px;
+      background: currentColor;
+      transform-origin: 50% 100%;
+      transform: scaleY(0.35);
+      will-change: transform;
+      animation: soundEq 1.1s ease-in-out infinite;
+    }
+    .sound-eq i:nth-child(2) { animation-delay: -0.45s; }
+    .sound-eq i:nth-child(3) { animation-delay: -0.8s; }
+    @keyframes soundEq {
+      0%, 100% { transform: scaleY(0.35); }
+      50%      { transform: scaleY(1); }
+    }
+
+    /* Nom du bouton au survol */
+    .sound-label {
+      position: absolute;
+      top: calc(100% + 9px);
+      right: -2px;
+      z-index: 30;
+      white-space: nowrap;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 12px;
+      line-height: 1.2;
+      color: var(--ink);
+      background: var(--parchment);
+      border: 1px solid var(--leather);
+      border-radius: 2px;
+      padding: 4px 8px 5px;
+      box-shadow: 2px 2px 0 var(--leather);
+      opacity: 0;
+      transform: translateY(-3px);
+      pointer-events: none;
+      transition: opacity 0.15s ease, transform 0.15s ease;
+    }
+    .sound-btn:hover .sound-label,
+    .sound-btn:focus-visible .sound-label { opacity: 1; transform: translateY(0); }
+
+    /* Volume : glisse depuis le bouton pendant la lecture */
+    .sound-volume {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      width: 0;
+      margin-right: 0;
+      overflow: hidden;
+      opacity: 0;
+      transition: width 0.35s ease, margin 0.35s ease, opacity 0.25s ease;
+    }
+    .sound.is-open .sound-volume { width: var(--snd-vol); margin-right: 10px; opacity: 1; }
+    .sound-volume svg { flex: none; width: 14px; height: 14px; color: var(--rule); }
+
+    .sound-range {
+      --vol: 35%;
+      flex: 1;
+      min-width: 0;
+      height: 18px;
+      margin: 0;
+      background: transparent;
+      cursor: pointer;
+      -webkit-appearance: none;
+              appearance: none;
+    }
+    .sound-range:focus { outline: none; }
+    .sound-range::-webkit-slider-runnable-track {
+      height: 2px;
+      border-radius: 1px;
+      background: linear-gradient(to right,
+                  var(--parchment-2) 0, var(--parchment-2) var(--vol),
+                  rgba(196, 169, 122, 0.4) var(--vol), rgba(196, 169, 122, 0.4) 100%);
+    }
+    .sound-range::-moz-range-track    { height: 2px; border-radius: 1px; background: rgba(196, 169, 122, 0.4); }
+    .sound-range::-moz-range-progress { height: 2px; border-radius: 1px; background: var(--parchment-2); }
+    /* Curseur en losange, comme les marqueurs de la carte */
+    .sound-range::-webkit-slider-thumb {
+      -webkit-appearance: none;
+              appearance: none;
+      width: 14px;
+      height: 14px;
+      margin-top: -6px;
+      border: 0;
+      background: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 14 14%27%3E%3Cpath d=%27M7 1.2 L12.8 7 L7 12.8 L1.2 7 Z%27 fill=%27%23e9dcbc%27 stroke=%27%232a190a%27 stroke-width=%271.4%27 stroke-linejoin=%27round%27/%3E%3C/svg%3E") no-repeat center / contain;
+      cursor: grab;
+    }
+    .sound-range::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      border: 0;
+      border-radius: 0;
+      background: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 14 14%27%3E%3Cpath d=%27M7 1.2 L12.8 7 L7 12.8 L1.2 7 Z%27 fill=%27%23e9dcbc%27 stroke=%27%232a190a%27 stroke-width=%271.4%27 stroke-linejoin=%27round%27/%3E%3C/svg%3E") no-repeat center / contain;
+      cursor: grab;
+    }
+    .sound-range:active::-webkit-slider-thumb { cursor: grabbing; }
+    .sound-range:active::-moz-range-thumb     { cursor: grabbing; }
+    .sound-range:focus-visible::-webkit-slider-thumb { filter: drop-shadow(0 0 3px rgba(233, 220, 188, 0.9)); }
+    .sound-range:focus-visible::-moz-range-thumb     { filter: drop-shadow(0 0 3px rgba(233, 220, 188, 0.9)); }
+
+    /* Téléphones et tablettes : le volume se règle avec les boutons de l'appareil */
+    @media (hover: none) {
+      .sound-volume { display: none; }
+      .page-title.sound-open { padding: 0 calc(var(--snd) + 14px); }
+      .sound-label { display: none; }
+    }
+    @media (max-width: 640px) {
+      :root { --snd: 26px; }
+      .page-title { padding: 0 calc(var(--snd) + 10px); }
+    }
   </style>
 </head>
 <body>
@@ -789,6 +961,20 @@
 
 <header class="page-title">
   <h1>Traverse de Lameblanche</h1>
+
+  <div class="sound" id="sound">
+    <div class="sound-volume">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z" fill="currentColor"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+      <input type="range" class="sound-range" id="soundRange" min="0" max="100" value="35" aria-label="Volume de la musique" />
+    </div>
+    <button type="button" class="sound-btn" id="soundBtn" aria-pressed="false" aria-label="Lancer la musique d’ambiance">
+      <svg class="ico-note" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3" fill="currentColor"/><circle cx="17" cy="16" r="3" fill="currentColor"/></svg>
+      <svg class="ico-pause" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+      <span class="sound-eq" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span class="sound-label" aria-hidden="true">Lancer la musique</span>
+    </button>
+    <audio id="ambientAudio" src="Musique.mp3" loop preload="none"></audio>
+  </div>
 </header>
 
 <main class="map-wrapper" id="mapWrapper">
@@ -1350,6 +1536,96 @@
 
   // Les polices changent la hauteur des textes une fois chargées
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(onResize);
+
+
+  // ══════════════════════════════════════════════
+  // Musique d'ambiance
+  // ══════════════════════════════════════════════
+  (function () {
+    const box   = document.getElementById('sound');
+    const btn   = document.getElementById('soundBtn');
+    const range = document.getElementById('soundRange');
+    const audio = document.getElementById('ambientAudio');
+    const label = btn && btn.querySelector('.sound-label');
+    const title = document.querySelector('.page-title');
+    if (!box || !btn || !range || !audio) return;
+
+    const KEY = 'lameblanche.volume';
+    let volume = 0.35;
+    try {
+      const saved = parseFloat(localStorage.getItem(KEY));
+      if (Number.isFinite(saved)) volume = Math.min(1, Math.max(0, saved));
+    } catch (e) { /* stockage indisponible : volume par défaut */ }
+
+    function paintRange() {
+      range.value = Math.round(volume * 100);
+      range.style.setProperty('--vol', range.value + '%');
+    }
+    paintRange();
+
+    function setLabel(text) {
+      if (label) label.textContent = text;
+      btn.setAttribute('aria-label', text === 'Mettre en pause' ? 'Mettre la musique en pause' : 'Lancer la musique d’ambiance');
+    }
+
+    // Fondu du volume, pour ne pas surprendre à l'ouverture comme à la pause
+    let fadeId = 0;
+    function fadeTo(target, ms, done) {
+      const id = ++fadeId;
+      const from = audio.volume;
+      const t0 = performance.now();
+      (function step(now) {
+        if (id !== fadeId) return;
+        // (le premier horodatage d'animation peut précéder t0 : on borne entre 0 et 1)
+        const k = Math.min(1, Math.max(0, (now - t0) / ms));
+        audio.volume = Math.min(1, Math.max(0, from + (target - from) * k));
+        if (k < 1) requestAnimationFrame(step);
+        else if (done) done();
+      })(t0);
+    }
+
+    function setOpen(on) {
+      box.classList.toggle('is-open', on);
+      if (title) title.classList.toggle('sound-open', on);
+    }
+
+    function play() {
+      audio.volume = 0;
+      const p = audio.play();
+      const started = () => {
+        box.classList.add('is-playing');
+        btn.setAttribute('aria-pressed', 'true');
+        setLabel('Mettre en pause');
+        setOpen(true);
+        fadeTo(volume, 900);
+      };
+      if (p && p.then) p.then(started).catch(() => setLabel('Musique indisponible'));
+      else started();
+    }
+
+    function pause() {
+      box.classList.remove('is-playing');
+      btn.setAttribute('aria-pressed', 'false');
+      setLabel('Lancer la musique');
+      setOpen(false);
+      fadeTo(0, 450, () => audio.pause());
+    }
+
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      if (box.classList.contains('is-playing')) pause();
+      else play();
+    });
+
+    range.addEventListener('input', () => {
+      volume = range.value / 100;
+      paintRange();
+      fadeId++;                         // un réglage manuel interrompt le fondu en cours
+      if (box.classList.contains('is-playing')) audio.volume = volume;
+      try { localStorage.setItem(KEY, String(volume)); } catch (e) {}
+    });
+    range.addEventListener('click', e => e.stopPropagation());
+  })();
 
   // ══════════════════════════════════════════════
   // Easter egg : 1 chance sur 10 de bêler en retournant la fiche Corven

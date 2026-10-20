@@ -146,10 +146,29 @@
       pointer-events: none;
     }
 
+    /* ══════════════════════════════════════════════
+       Zoom de la carte
+       Trois variables, mises à jour en JS :
+         --zs        : facteur de zoom (1 = carte entière)
+         --zox, --zoy : décalage de la carte, en % du cadre
+       L'image est redimensionnée (et non étirée), donc elle reste nette ;
+       les marqueurs suivent la carte mais gardent leur taille.
+       ══════════════════════════════════════════════ */
+    .map-viewport {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      touch-action: none;   /* le pincement à deux doigts zoome la carte, pas la page */
+    }
+
     .map-img {
+      position: absolute;
+      left: var(--zox, 0%);
+      top: var(--zoy, 0%);
       display: block;
-      width: 100%;
-      height: 100%;
+      width: calc(var(--zs, 1) * 100%);
+      height: calc(var(--zs, 1) * 100%);
+      max-width: none;
       object-fit: cover;
       -webkit-user-select: none;
       user-select: none;
@@ -160,7 +179,13 @@
       position: absolute;
       inset: 0;
       overflow: hidden;
+      touch-action: none;
     }
+
+    /* Carte agrandie : on peut la faire glisser */
+    .map-wrapper.is-zoomed .map-layer { cursor: grab; }
+    .map-wrapper.is-panning .map-layer,
+    .map-wrapper.is-panning .marker { cursor: grabbing; }
 
     /* ══════════════════════════════════════════════
        Marqueurs
@@ -173,8 +198,8 @@
       --size: 24px;
       --hit: 40px;
       position: absolute;
-      left: var(--x);
-      top: var(--y);
+      left: calc(var(--x) * var(--zs, 1) + var(--zox, 0%));
+      top:  calc(var(--y) * var(--zs, 1) + var(--zoy, 0%));
       width: var(--hit);
       height: var(--hit);
       margin: calc(var(--hit) / -2) 0 0 calc(var(--hit) / -2);
@@ -235,6 +260,8 @@
 
     /* Icône livre pour le bouton d'introduction */
     .marker--info { --size: 30px; }
+    /* Le bouton d'introduction reste dans son coin, quel que soit le zoom */
+    .map-layer .marker--info { left: var(--x); top: var(--y); }
     .marker-icon {
       width: 16px;
       height: 16px;
@@ -337,6 +364,96 @@
     /* Écrans tactiles : pas de survol, l'étiquette ne sert à rien */
     @media (hover: none) {
       .marker-label { display: none; }
+    }
+
+
+    /* ══════════════════════════════════════════════
+       Boutons de zoom (coin haut droit de la carte)
+       ══════════════════════════════════════════════ */
+    .zoom {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      border-radius: 15px;
+      background: radial-gradient(circle at 35% 20%, #5a3c1d 0%, var(--ink) 50%, var(--ink-deep) 100%);
+      box-shadow:
+        inset 0 0 0 1.5px rgba(245, 240, 224, 0.9),
+        0 0 0 1px var(--ink-deep),
+        0 2px 6px rgba(0, 0, 0, 0.45);
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+    .map-wrapper.is-ready .zoom { opacity: 1; }
+
+    .zoom-btn {
+      position: relative;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      border: 0;
+      background: none;
+      color: var(--parchment);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .zoom-btn + .zoom-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 8px;
+      right: 8px;
+      height: 1px;
+      background: rgba(245, 240, 224, 0.28);
+    }
+    .zoom-btn svg { width: 14px; height: 14px; transition: transform 0.15s ease; }
+    .zoom-btn:hover:not(:disabled) svg { transform: scale(1.18); }
+    .zoom-btn:disabled { color: rgba(245, 240, 224, 0.35); cursor: default; }
+    .zoom-btn:focus { outline: none; }
+    .zoom-btn:focus-visible { outline: 2px solid var(--parchment); outline-offset: 2px; border-radius: 50%; }
+
+    /* Nom du bouton au survol, à gauche (même style que les noms de lieux) */
+    .zoom-label {
+      position: absolute;
+      right: calc(100% + 10px);
+      top: 50%;
+      transform: translate(4px, -50%);
+      white-space: nowrap;
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      line-height: 1.2;
+      color: var(--ink);
+      background: var(--parchment);
+      border: 1px solid var(--leather);
+      border-radius: 2px;
+      padding: 4px 9px 5px;
+      box-shadow: 2px 2px 0 var(--leather), 0 4px 12px rgba(0, 0, 0, 0.3);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s ease, transform 0.15s ease;
+    }
+    .zoom-label small {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 11px;
+      font-weight: 400;
+      letter-spacing: 0;
+      color: var(--muted);
+    }
+    .zoom-btn:hover:not(:disabled) .zoom-label,
+    .zoom-btn:focus-visible .zoom-label { opacity: 1; transform: translate(0, -50%); }
+    @media (hover: none) { .zoom-label { display: none; } }
+    .map-wrapper.has-popup .zoom-label { display: none; }
+
+    @media (max-width: 640px) {
+      .zoom { top: 8px; right: 8px; border-radius: 14px; }
+      .zoom-btn { width: 28px; height: 28px; }
     }
 
     /* ══════════════════════════════════════════════
@@ -978,7 +1095,9 @@
 </header>
 
 <main class="map-wrapper" id="mapWrapper">
-  <img src="carte.jpg" alt="Carte de la traverse de Lameblanche" class="map-img" id="mapImg" width="2048" height="1536" />
+  <div class="map-viewport">
+    <img src="carte.jpg" alt="Carte de la traverse de Lameblanche" class="map-img" id="mapImg" width="2048" height="1536" />
+  </div>
 
   <!-- ══════════════════════════════════════════════
        MARQUEURS
@@ -1041,6 +1160,22 @@
 
 
   </div><!-- /map-layer -->
+
+  <!-- Zoom : molette, double-clic, pincement à deux doigts, ou ces boutons -->
+  <div class="zoom" role="group" aria-label="Zoom de la carte">
+    <button type="button" class="zoom-btn" data-zoom="in" aria-label="Zoomer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      <span class="zoom-label">Zoomer <small>(molette, double-clic)</small></span>
+    </button>
+    <button type="button" class="zoom-btn" data-zoom="out" aria-label="Dézoomer" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/></svg>
+      <span class="zoom-label">Dézoomer</span>
+    </button>
+    <button type="button" class="zoom-btn" data-zoom="reset" aria-label="Revenir à la carte entière" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+      <span class="zoom-label">Carte entière</span>
+    </button>
+  </div>
 
   <!-- ══════════════════════════════════════════════
        POPUPS
@@ -1305,7 +1440,9 @@
   // ══════════════════════════════════════════════
   // Popups
   // ══════════════════════════════════════════════
-  function placePopup(trigger, popup) {
+  function placePopup(trigger, popup, keepSide) {
+    // Pendant un zoom, le popup garde le même côté tant qu'il y tient (évite qu'il saute)
+    const prevSide = keepSide ? ['top', 'bottom', 'right', 'left'].find(sd => popup.classList.contains('side-' + sd)) : null;
     popup.classList.remove('side-top', 'side-bottom', 'side-left', 'side-right', 'no-arrow');
 
     // Petit écran : volet fixé en bas, géré entièrement par le CSS
@@ -1338,6 +1475,7 @@
     };
     const need = { top: ph, bottom: ph, right: pw, left: pw };
     const order = ['top', 'bottom', 'right', 'left'];
+    if (prevSide) order.unshift(order.splice(order.indexOf(prevSide), 1)[0]);
 
     let side = order.find(s => room[s] >= need[s]);
     const fits = Boolean(side);
@@ -1370,6 +1508,7 @@
   function closePopup(restoreFocus) {
     if (!openPopup) return;
     openPopup.classList.remove('active');
+    wrapper.classList.remove('has-popup');
     openTrigger.setAttribute('aria-expanded', 'false');
     if (restoreFocus) openTrigger.focus({ preventScroll: true });
     openPopup = openTrigger = null;
@@ -1382,6 +1521,7 @@
     closePopup(false);
 
     popup.classList.add('active');
+    wrapper.classList.add('has-popup');
     trigger.setAttribute('aria-expanded', 'true');
     trigger.classList.add('is-seen');
     openPopup = popup;
@@ -1413,6 +1553,261 @@
   wrapper.querySelectorAll('.popup img').forEach(img => {
     if (!img.complete) img.addEventListener('load', repositionPopup);
   });
+
+  // ══════════════════════════════════════════════
+  // Zoom de la carte
+  // Molette (zoom vers le curseur), pincement à deux doigts, double-clic ou
+  // double-tap, glisser pour se déplacer, boutons + / − / carte entière,
+  // et au clavier : touches +, − et 0.
+  // ══════════════════════════════════════════════
+  const ZOOM_MAX  = 3;      // l'image fait 2048 px : nette jusqu'à ~2,3× sur 900 px, encore correcte à 3×
+  const ZOOM_STEP = 1.6;    // facteur des boutons et du clavier
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const zoomBtns = {
+    in:    wrapper.querySelector('[data-zoom="in"]'),
+    out:   wrapper.querySelector('[data-zoom="out"]'),
+    reset: wrapper.querySelector('[data-zoom="reset"]')
+  };
+
+  // État affiché (cur) et état visé (tgt) : s = zoom, ox / oy = décalage en fraction du cadre
+  const cur = { s: 1, ox: 0, oy: 0 };
+  const tgt = { s: 1, ox: 0, oy: 0 };
+  let zoomFrame = 0;
+
+  function clampView(v) {
+    v.s  = clamp(v.s, 1, ZOOM_MAX);
+    v.ox = clamp(v.ox, 1 - v.s, 0);
+    v.oy = clamp(v.oy, 1 - v.s, 0);
+    return v;
+  }
+
+  // Point du cadre (en fraction) → point de la carte (en fraction), pour un état donné
+  const toMap = (v, px, py) => ({ mx: (px - v.ox) / v.s, my: (py - v.oy) / v.s });
+
+  // Zoome d'un facteur en gardant immobile le point (px, py) du cadre
+  function zoomAround(v, factor, px, py) {
+    const { mx, my } = toMap(v, px, py);
+    v.s = clamp(v.s * factor, 1, ZOOM_MAX);
+    v.ox = px - mx * v.s;
+    v.oy = py - my * v.s;
+    return clampView(v);
+  }
+
+  function applyView() {
+    wrapper.style.setProperty('--zs', cur.s.toFixed(4));
+    wrapper.style.setProperty('--zox', (cur.ox * 100).toFixed(4) + '%');
+    wrapper.style.setProperty('--zoy', (cur.oy * 100).toFixed(4) + '%');
+
+    const zoomed = tgt.s > 1.001;
+    wrapper.classList.toggle('is-zoomed', zoomed);
+    zoomBtns.in.disabled    = tgt.s >= ZOOM_MAX - 0.001;
+    zoomBtns.out.disabled   = !zoomed;
+    zoomBtns.reset.disabled = !zoomed;
+
+    followPopup();
+  }
+
+  // Le popup ouvert suit son marqueur ; il se ferme si le marqueur sort du cadre
+  function followPopup() {
+    if (!openPopup || !openTrigger || sheetMQ.matches) return;
+    if (openTrigger.classList.contains('marker--info')) return;
+    const wr = wrapper.getBoundingClientRect();
+    const tr = (openTrigger.querySelector('.marker-disc') || openTrigger).getBoundingClientRect();
+    const cx = tr.left + tr.width / 2 - wr.left;
+    const cy = tr.top + tr.height / 2 - wr.top;
+    if (cx < 0 || cy < 0 || cx > wr.width || cy > wr.height) closePopup(false);
+    else placePopup(openTrigger, openPopup, true);
+  }
+
+  // Animation douce de l'état affiché vers l'état visé
+  function animateView() {
+    if (reduceMotion.matches) {
+      Object.assign(cur, tgt);
+      applyView();
+      return;
+    }
+    if (zoomFrame) return;
+    const step = () => {
+      const k = 0.24;
+      const ls = Math.log(cur.s) + (Math.log(tgt.s) - Math.log(cur.s)) * k;
+      cur.s  = Math.exp(ls);
+      cur.ox += (tgt.ox - cur.ox) * k;
+      cur.oy += (tgt.oy - cur.oy) * k;
+      clampView(cur);
+      const done = Math.abs(cur.s - tgt.s) < 0.0005 && Math.abs(cur.ox - tgt.ox) < 0.0002 && Math.abs(cur.oy - tgt.oy) < 0.0002;
+      if (done) Object.assign(cur, tgt);
+      applyView();
+      zoomFrame = done ? 0 : requestAnimationFrame(step);
+    };
+    zoomFrame = requestAnimationFrame(step);
+  }
+
+  // Déplacement immédiat (glisser, pincer) : pas d'animation, la carte suit le doigt
+  function setViewNow(v) {
+    if (zoomFrame) { cancelAnimationFrame(zoomFrame); zoomFrame = 0; }
+    Object.assign(tgt, clampView(v));
+    Object.assign(cur, tgt);
+    applyView();
+  }
+
+  function zoomBy(factor, px, py) {
+    zoomAround(tgt, factor, px, py);
+    animateView();
+  }
+
+  function resetZoom() {
+    Object.assign(tgt, { s: 1, ox: 0, oy: 0 });
+    animateView();
+  }
+
+  // Position d'un événement en fraction du cadre
+  function framePoint(clientX, clientY) {
+    const r = wrapper.getBoundingClientRect();
+    return { px: (clientX - r.left) / r.width, py: (clientY - r.top) / r.height, r };
+  }
+
+  // Les gestes ne s'appliquent pas dans les popups (lecture, défilement) ni sur les boutons de zoom
+  const outsideGestureArea = target => target.closest('.popup, .zoom');
+
+  // ── Boutons ──
+  zoomBtns.in.addEventListener('click', e => { e.stopPropagation(); zoomBy(ZOOM_STEP, 0.5, 0.5); });
+  zoomBtns.out.addEventListener('click', e => { e.stopPropagation(); zoomBy(1 / ZOOM_STEP, 0.5, 0.5); });
+  zoomBtns.reset.addEventListener('click', e => { e.stopPropagation(); resetZoom(); });
+
+  // ── Molette (et pincement sur pavé tactile, que les navigateurs traduisent en molette + Ctrl) ──
+  wrapper.addEventListener('wheel', e => {
+    if (outsideGestureArea(e.target)) return;
+    e.preventDefault();
+    const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? wrapper.clientHeight : 1;
+    const dy = e.deltaY * unit;
+    const factor = Math.exp(-dy * (e.ctrlKey ? 0.01 : 0.0018));
+    const { px, py } = framePoint(e.clientX, e.clientY);
+    zoomBy(factor, px, py);
+  }, { passive: false });
+
+  // ── Glisser (souris ou un doigt) et pincer (deux doigts) ──
+  const pointers = new Map();
+  let gesture = null;
+  let suppressClick = false;
+  let lastTap = null;
+  let lastPointerType = 'mouse';
+
+  function startGesture() {
+    const pts = [...pointers.values()];
+    const start = { s: cur.s, ox: cur.ox, oy: cur.oy };
+    if (pts.length >= 2) {
+      const [a, b] = pts;
+      const mid = framePoint((a.x + b.x) / 2, (a.y + b.y) / 2);
+      gesture = { type: 'pinch', start, d0: Math.hypot(a.x - b.x, a.y - b.y) || 1,
+                  map: toMap(start, mid.px, mid.py), moved: true };
+    } else if (pts.length === 1) {
+      gesture = { type: 'pan', start, x0: pts[0].x, y0: pts[0].y, moved: false };
+    } else {
+      gesture = null;
+    }
+  }
+
+  wrapper.addEventListener('pointerdown', e => {
+    lastPointerType = e.pointerType;
+    suppressClick = false;   // nouveau geste : l'éventuel clic bloqué du geste précédent n'a plus lieu d'être
+    if (e.button !== 0 || outsideGestureArea(e.target)) return;
+    if (zoomFrame) { cancelAnimationFrame(zoomFrame); zoomFrame = 0; Object.assign(tgt, cur); }
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    startGesture();
+  });
+
+  wrapper.addEventListener('pointermove', e => {
+    const p = pointers.get(e.pointerId);
+    if (!p || !gesture) return;
+    p.x = e.clientX;
+    p.y = e.clientY;
+    const r = wrapper.getBoundingClientRect();
+
+    if (gesture.type === 'pinch') {
+      const [a, b] = [...pointers.values()];
+      const d = Math.hypot(a.x - b.x, a.y - b.y);
+      const mid = framePoint((a.x + b.x) / 2, (a.y + b.y) / 2);
+      const s = clamp(gesture.start.s * d / gesture.d0, 1, ZOOM_MAX);
+      setViewNow({ s, ox: mid.px - gesture.map.mx * s, oy: mid.py - gesture.map.my * s });
+      return;
+    }
+
+    const dx = p.x - gesture.x0;
+    const dy = p.y - gesture.y0;
+    if (!gesture.moved) {
+      if (Math.hypot(dx, dy) < 5 || cur.s <= 1.001) return;   // simple clic, ou carte entière : rien à déplacer
+      gesture.moved = true;
+      wrapper.classList.add('is-panning');
+      try { wrapper.setPointerCapture(e.pointerId); } catch (err) {}
+    }
+    setViewNow({ s: gesture.start.s, ox: gesture.start.ox + dx / r.width, oy: gesture.start.oy + dy / r.height });
+  });
+
+  function endPointer(e) {
+    if (!pointers.has(e.pointerId)) return;
+    const wasMoved = gesture && gesture.moved;
+    pointers.delete(e.pointerId);
+    // Un glisser ne doit pas ouvrir un lieu ni fermer le popup. Au doigt, aucun clic ne suit
+    // un glisser : le blocage est donc levé peu après, pour ne pas avaler le tap suivant.
+    if (wasMoved) {
+      suppressClick = true;
+      setTimeout(() => { suppressClick = false; }, 250);
+    }
+
+    // Double-tap au doigt (le double-clic de la souris est géré plus bas)
+    if (e.type === 'pointerup' && e.pointerType === 'touch' && !wasMoved && pointers.size === 0
+        && !(e.target.closest && e.target.closest('.marker'))) {
+      const now = performance.now();
+      if (lastTap && now - lastTap.t < 320 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 30) {
+        lastTap = null;
+        doubleZoom(e.clientX, e.clientY);
+      } else {
+        lastTap = { t: now, x: e.clientX, y: e.clientY };
+      }
+    }
+
+    if (pointers.size === 0) {
+      gesture = null;
+      wrapper.classList.remove('is-panning');
+    } else {
+      startGesture();   // passage de deux doigts à un : on continue à glisser sans à-coup
+    }
+  }
+  // Écouté sur la fenêtre : un bouton relâché hors de la carte termine aussi le geste
+  window.addEventListener('pointerup', endPointer);
+  window.addEventListener('pointercancel', endPointer);
+
+  // Empêche le clic qui suit un glisser (capturé avant les marqueurs et la page)
+  wrapper.addEventListener('click', e => {
+    if (!suppressClick) return;
+    suppressClick = false;
+    e.stopPropagation();
+    e.preventDefault();
+  }, true);
+
+  // ── Double-clic : zoom ×2 à l'endroit visé ; au maximum, retour à la carte entière ──
+  function doubleZoom(clientX, clientY) {
+    if (tgt.s >= ZOOM_MAX - 0.01) { resetZoom(); return; }
+    const { px, py } = framePoint(clientX, clientY);
+    zoomBy(2, px, py);
+  }
+  wrapper.addEventListener('dblclick', e => {
+    // (au doigt, le double-tap est déjà traité : certains navigateurs envoient aussi un double-clic)
+    if (lastPointerType === 'touch' || outsideGestureArea(e.target) || e.target.closest('.marker')) return;
+    e.preventDefault();
+    doubleZoom(e.clientX, e.clientY);
+  });
+
+  // ── Clavier : + / − / 0 (sans Ctrl, qui reste le zoom du navigateur) ──
+  document.addEventListener('keydown', e => {
+    if (e.ctrlKey || e.metaKey || e.altKey || activeLightbox) return;
+    if (e.target.closest && e.target.closest('input, textarea, select, [contenteditable="true"]')) return;
+    if (e.key === '+' || e.key === '=')      { e.preventDefault(); zoomBy(ZOOM_STEP, 0.5, 0.5); }
+    else if (e.key === '-' || e.key === '_') { e.preventDefault(); zoomBy(1 / ZOOM_STEP, 0.5, 0.5); }
+    else if (e.key === '0')                  { e.preventDefault(); resetZoom(); }
+  });
+
+  applyView();
 
   // ══════════════════════════════════════════════
   // Lightboxes (recto / verso)

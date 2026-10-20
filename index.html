@@ -30,6 +30,9 @@
       /* Bords du papier légèrement plus foncés */
       --paper-edge: inset 0 0 22px rgba(139, 105, 60, 0.14);
 
+      /* Taille du texte des popups et des fiches (réglée par les boutons A− / A+) */
+      --text-scale: 1;
+
       /* Largeur maximale de la carte (900px = taille d'origine du site) */
       --map-max: 900px;
       /* Marge minimale autour de l'ensemble titre + carte */
@@ -464,7 +467,8 @@
     .popup {
       position: absolute;
       z-index: 100;
-      width: min(var(--w, 380px), calc(100% - 16px));
+      /* la largeur grandit avec le texte, pour garder des lignes confortables */
+      width: min(calc(var(--w, 380px) * var(--text-scale)), calc(100% - 16px));
       display: none;
       flex-direction: column;
       background-color: var(--parchment);
@@ -491,7 +495,7 @@
       align-items: center;
       gap: 10px;
       margin: 0 16px;
-      padding: 13px 30px 9px 0;
+      padding: 13px 100px 9px 0;   /* place pour A− A+ et la croix */
       border-bottom: 1px solid var(--rule);
     }
 
@@ -517,7 +521,7 @@
 
     .popup-title {
       font-family: 'Cinzel', Georgia, serif;
-      font-size: 14px;
+      font-size: calc(14px * var(--text-scale));
       font-weight: 700;
       color: var(--ink);
       letter-spacing: 0.04em;
@@ -531,7 +535,7 @@
       overscroll-behavior: contain;
       padding: 11px 16px 14px;
       font-family: Georgia, 'Times New Roman', serif;
-      font-size: 13.5px;
+      font-size: calc(13.5px * var(--text-scale));
       line-height: 1.65;
       color: var(--ink);
       scrollbar-width: thin;
@@ -708,7 +712,7 @@
     .lightbox-card {
       position: relative;
       margin: auto;               /* centre la fiche, et laisse défiler si elle est trop haute */
-      width: min(440px, 100%);
+      width: min(calc(440px * var(--text-scale)), 100%);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -770,8 +774,8 @@
     }
     #lightbox-yeti .lightbox-front img { width: 100%; }
     /* Fiche au long texte : un peu plus large, pour qu'elle reste moins haute */
-    #lightbox-aurore .lightbox-card { width: min(560px, 100%); }
-    #lightbox-corvenac .lightbox-card { width: min(500px, 100%); }
+    #lightbox-aurore .lightbox-card { width: min(calc(560px * var(--text-scale)), 100%); }
+    #lightbox-corvenac .lightbox-card { width: min(calc(500px * var(--text-scale)), 100%); }
 
     .lightbox-back {
       transform: rotateY(180deg);
@@ -779,7 +783,7 @@
       flex-direction: column;
       padding: 1.5rem 0.7rem 1rem 1.5rem;
       font-family: Georgia, 'Times New Roman', serif;
-      font-size: 14px;
+      font-size: calc(14px * var(--text-scale));
       line-height: 1.65;
       color: var(--ink);
       text-align: left;
@@ -788,7 +792,7 @@
       flex: none;
       margin-right: 0.8rem;
       font-family: 'Cinzel', Georgia, serif;
-      font-size: 15px;
+      font-size: calc(15px * var(--text-scale));
       font-weight: 700;
       letter-spacing: 0.04em;
       text-align: center;
@@ -886,6 +890,81 @@
       outline: 2px solid var(--parchment);
       outline-offset: 3px;
     }
+
+
+    /* ══════════════════════════════════════════════
+       Taille du texte : boutons A− / A+
+       (ajoutés par le script dans chaque popup et chaque fiche)
+       ══════════════════════════════════════════════ */
+    .textsize {
+      position: absolute;
+      top: 9px;
+      right: 41px;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      padding-right: 6px;
+      border-right: 1px solid var(--rule);
+    }
+    .textsize-btn {
+      position: relative;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      border: 1px solid transparent;
+      border-radius: 50%;
+      background: none;
+      color: var(--leather);
+      font-family: 'Cinzel', Georgia, serif;
+      font-weight: 700;
+      line-height: 1;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+    .textsize-btn.is-down { font-size: 12.5px; }
+    .textsize-btn.is-up   { font-size: 17px; }
+    .textsize-btn sup {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 10px;
+      margin-left: 1px;
+      transform: translateY(-1px);
+    }
+    .textsize-btn:hover:not(:disabled) {
+      background: var(--parchment-2);
+      border-color: var(--rule);
+      color: var(--ink);
+    }
+    .textsize-btn:disabled { opacity: 0.35; cursor: default; }
+    .textsize-btn:focus { outline: none; }
+    .textsize-btn:focus-visible { outline: 2px solid var(--leather); outline-offset: 1px; }
+
+    /* Dans les fiches : à gauche de la croix, en clair sur le fond sombre */
+    .lightbox .textsize {
+      position: fixed;
+      top: 1rem;
+      right: calc(1rem + 52px);
+      z-index: 2;
+      gap: 6px;
+      padding-right: 0;
+      border-right: 0;
+    }
+    .lightbox .textsize-btn {
+      width: 40px;
+      height: 40px;
+      border: 1.5px solid rgba(245, 240, 224, 0.5);
+      background: rgba(12, 8, 3, 0.6);
+      color: var(--parchment);
+    }
+    .lightbox .textsize-btn.is-down { font-size: 13px; }
+    .lightbox .textsize-btn.is-up   { font-size: 18px; }
+    .lightbox .textsize-btn:hover:not(:disabled) { background: rgba(12, 8, 3, 0.6); color: var(--rule); border-color: var(--rule); }
+    .lightbox .textsize-btn:focus-visible { outline-color: var(--parchment); outline-offset: 3px; }
+    /* Sur le recto (portrait), le réglage ne sert à rien : on l'estompe */
+    .lightbox-card:not(.flipped) ~ .textsize { opacity: 0; pointer-events: none; }
+    .lightbox .textsize { transition: opacity 0.3s ease; }
 
     /* ══════════════════════════════════════════════
        Animations réduites si le système le demande
@@ -1910,6 +1989,60 @@
     if (activeLightbox) closeLightbox(false);
     else closePopup(true);
   });
+
+  // ══════════════════════════════════════════════
+  // Taille du texte (A− / A+) : vaut pour tous les popups et toutes les fiches,
+  // et reste mémorisée d'une visite à l'autre
+  // ══════════════════════════════════════════════
+  const TEXT_LEVELS = [1, 1.2, 1.4, 1.6];
+  const TEXT_KEY = 'lameblanche.texte';
+  let textLevel = 0;
+  try {
+    const saved = parseInt(localStorage.getItem(TEXT_KEY), 10);
+    if (saved >= 0 && saved < TEXT_LEVELS.length) textLevel = saved;
+  } catch (e) { /* stockage indisponible : taille normale */ }
+
+  const textButtons = [];
+
+  function applyTextScale() {
+    document.documentElement.style.setProperty('--text-scale', TEXT_LEVELS[textLevel]);
+    textButtons.forEach(({ down, up }) => {
+      down.disabled = textLevel === 0;
+      up.disabled = textLevel === TEXT_LEVELS.length - 1;
+    });
+    repositionPopup();
+    if (activeLightbox) syncCardHeight(activeLightbox);
+  }
+
+  function changeTextSize(delta) {
+    textLevel = clamp(textLevel + delta, 0, TEXT_LEVELS.length - 1);
+    try { localStorage.setItem(TEXT_KEY, String(textLevel)); } catch (e) {}
+    applyTextScale();
+  }
+
+  function makeTextSizeControl() {
+    const group = document.createElement('div');
+    group.className = 'textsize';
+    group.setAttribute('role', 'group');
+    group.setAttribute('aria-label', 'Taille du texte');
+    group.innerHTML =
+      '<button type="button" class="textsize-btn is-down" title="Réduire le texte" aria-label="Réduire le texte">A<sup>−</sup></button>' +
+      '<button type="button" class="textsize-btn is-up" title="Agrandir le texte" aria-label="Agrandir le texte">A<sup>+</sup></button>';
+    const down = group.querySelector('.is-down');
+    const up = group.querySelector('.is-up');
+    down.addEventListener('click', e => { e.stopPropagation(); changeTextSize(-1); });
+    up.addEventListener('click', e => { e.stopPropagation(); changeTextSize(1); });
+    textButtons.push({ down, up });
+    return group;
+  }
+
+  wrapper.querySelectorAll('.popup').forEach(popup => {
+    popup.insertBefore(makeTextSizeControl(), popup.querySelector('.popup-header'));
+  });
+  document.querySelectorAll('.lightbox').forEach(lb => {
+    lb.querySelector('.lightbox-card').after(makeTextSizeControl());
+  });
+  applyTextScale();
 
   // ══════════════════════════════════════════════
   // Redimensionnement (fenêtre, zoom du navigateur, rotation du téléphone)

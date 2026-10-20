@@ -638,6 +638,8 @@
       object-fit: contain;
     }
     #lightbox-yeti .lightbox-front img { width: 100%; }
+    /* Fiche au long texte : un peu plus large, pour qu'elle reste moins haute */
+    #lightbox-aurore .lightbox-card { width: min(560px, 100%); }
 
     .lightbox-back {
       transform: rotateY(180deg);
@@ -835,7 +837,7 @@
   </div>
 
   <!-- ══ Grotte des cultistes ══ -->
-  <div class="popup" id="popup-grotte" role="dialog" aria-labelledby="t-grotte" tabindex="-1" style="--w: 540px; --c: #7a9bbf;">
+  <div class="popup" id="popup-grotte" role="dialog" aria-labelledby="t-grotte" tabindex="-1" style="--w: 580px; --c: #7a9bbf;">
     <button type="button" class="popup-close" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     <div class="popup-header">
       <span class="popup-gem" aria-hidden="true"></span>
@@ -845,8 +847,11 @@
       <button type="button" class="portrait-wrapper" data-lightbox="lightbox-aurore" aria-label="Agrandir le portrait d'Aurore Sandrenon">
         <img src="leportrait.png" alt="" />
       </button>
-      <p>Au fond de la grotte s'étend un campement laissé à l'abandon par les sectateurs que le yéti a massacrés à l'extérieur. Tout indique que ceux-ci y résidaient et y célébraient leurs rituels. Un monolithe drust, entouré d'encens et de fétiches, signe leur passage, tout comme deux ronces en pot dont la présence à cette altitude défie l'entendement. Vraisemblablement issues de la forêt Cramoisie, à l'ouest. L'herbier de Joshua Barnes, chasseur de sorcières au service de Griseroche, leur consacre d'ailleurs une notice : selon lui, cette plante s'imprègne aisément de la magie des drust, ou en porterait par essence la marque, la corruption. Un parchemin gisant non loin, dédié à une certaine Roncécorche, s'apparente à un manuel d'initiation à cette même magie et prolonge l'énigme. Faute de renseignements sur cette Roncécorche, son nom servira désormais à désigner ses obligés ou ceux qui s'efforcent de se ranger à ses côtés.</p>
-      <p>Quatre cages encombrent aussi les lieux : deux de petites dimensions, taillées pour des enfants ou des animaux domestiques, et deux suffisamment spacieuses pour enfermer des adultes. Du sang humain en maculait l'intérieur, séché depuis peu, et des outils sacrificiels reposaient à portée de main. Demeurent enfin les restes d'un feu, des vivres gâtées et des vêtements civils sans propriétaire identifié. Peut-être des victimes du culte, peut-être ses officiants, peut-être les deux à la fois. Le pendentif Sandrenon figure au nombre de ces effets.</p>
+      <p>Quatre cages occupaient cette grotte, et du sang humain, séché depuis peu d’après mes estimations, en maculait l’intérieur. Les deux plus petites convenaient à des enfants ou à des animaux domestiques&nbsp;; les autres offraient assez d’espace pour enfermer des adultes. Des outils sacrificiels reposaient à portée de main. En somme, le hasard m’avait menée ici quelques jours trop tard, semble-t-il.</p>
+      <p>À qui appartenaient les vêtements civils découverts sur place&nbsp;? Aux victimes du culte peut-être, ou à ses officiants, qui s’en seraient servis pour se fondre dans la population&nbsp;; sans doute aux uns et aux autres à la fois. Le pendentif Sandrenon se trouvait parmi ces effets.</p>
+      <p>Déserté, le campement des sectateurs occupe le fond de la cavité. De toute évidence, ils y résidaient et y célébraient leurs rituels autour d’un monolithe flanqué d’encens et de fétiches. Le yéti massacra visiblement ces fidèles au-dehors, puisque l’intérieur ne gardait aucune trace de lutte et que tout y demeurait intact. Les vestiges d’un foyer voisinaient encore avec des vivres gâtés.</p>
+      <p>Deux ronces en pot y figuraient également, alors que presque rien ne pousse à pareille altitude. Elles venaient vraisemblablement de la forêt Cramoisie, à l’ouest. L’herbier de Joshua Barnes, recueilli par mes soins, consacre une notice à cette plante. Jadis chasseur de sorcières au service de Griseroche, l’auteur y soutient que la ronce s’imprègne aisément de la magie des drust, à moins qu’elle n’en porte par essence la marque, autrement dit la corruption. Cumulerait-elle ces deux natures, et propagerait-elle cette influence autant qu’elle la canalise&nbsp;? La chose demeure possible.</p>
+      <p>Reste enfin le document qui, le premier, porta à ma connaissance le nom de Roncécorche&nbsp;: un parchemin dédié à cette figure, que je garde depuis. Ce poème prend l’allure d’un manuel d’initiation à la magie drust. D’autres de ses sbires la rendirent célèbre, un an plus tard, à la Ferté-d’Arom notamment, puis à Corlain. Elle ourdit donc ses machinations depuis un certain temps déjà.</p>
     </div>
   </div>
 
@@ -970,10 +975,15 @@
       </div>
       <div class="lightbox-face lightbox-back">
         <h3>Aurore Sandrenon</h3>
-        <p>Le portrait peint sur le médaillon figure Aurore Sandrenon, héritière de la maison éponyme, tandis que le cadre porte quelques caractères de l'alphabet drust. L'inquisiteur Blancmistral en confirme la teneur.</p>
-        <p>Issue de la petite noblesse drustvari, la famille Sandrenon plonge ses racines dans les Hauts de Corlain et poursuit un long déclin dont les ressorts demeurent difficiles à démêler. Troisième ou Quatrième Guerre ? Contrecoups du sabbat Malecarde ? Allégeances mal placées ? Alliances regrettables ? Disgrâce ? Plusieurs causes s'entrecroisent vraisemblablement, bien qu'à leur apogée, les Sandrenon pesaient localement à travers leurs membres introduits à la cour Malvoie, dans la magistrature urbaine, et jusqu'aux fonctions de trésorier et d'échevin.</p>
-        <p>Trente-deux ans avant l'ouverture de la Porte des Ténèbres, ils auraient écrasé la maison Ostesylve au point d'en effacer toute trace. Sœur Everlange, du clergé de la Sainte Lumière, signale néanmoins qu'une « sœur Ostesylve », sorcière inscrite au sabbat Malecarde, tomba voici quelques années au cimetière Tertrebois. L'hypothèse d'une vengeance tardive mérite donc considération.</p>
-        <p>Reste à mentionner, pour la forme, une rumeur prêtant jadis à une certaine Eliana Sandrenon une liaison avec un membre de la maison Malvoie. Sûrement un simple cancan nobiliaire.</p>
+        <p>Ce médaillon appartenait à Eliana Sandrenon. Le portrait peint qui l’orne figure sa fille, Aurore, héritière de la maison éponyme, tandis que son cadre porte quelques caractères de l’alphabet drust, identifiés par l’inquisiteur Blancmistral.</p>
+        <p>Ces signes trouvent leur explication dans le passé de sa propriétaire. En enquêtant sur elle, j’appris en effet d’une source sûre, que je ne puis révéler ici, qu’Eliana fut l’une des trois têtes de la Triade malecarde, c’est-à-dire l’une des plus fidèles lieutenantes de dame Meredith Malvoie, à l’origine du fléau qui s’abattit naguère sur Drustvar. Une sorcière, par conséquent.</p>
+        <p>Aurore ne savait pas ce qu’était devenu ce bijou. Pour ma part, j’ignore comment il a pu se retrouver à Lameblanche, à l’opposé de Corlain, et je me suis gardée de lui en parler.</p>
+        <p>Selon mes recherches, la famille Sandrenon, de petite noblesse drustvari, plonge ses racines dans les Hauts de Corlain. À son apogée, elle pesait localement par ses membres introduits à la cour Malvoie et dans la magistrature urbaine&nbsp;; certains accédèrent même aux charges de trésorier et d’échevin. Elle poursuit pourtant depuis plusieurs décennies un long déclin, dont les ressorts restent malaisés à démêler. Les explications possibles abondent, des guerres de faction aux contrecoups du sabbat Malecarde, en passant par des allégeances mal placées, des alliances regrettables ou une disgrâce&nbsp;; plusieurs causes s’entrecroisent vraisemblablement.</p>
+        <p>Trente-deux ans avant l’ouverture de la Porte des Ténèbres, les Sandrenon auraient écrasé la maison Ostesylve jusqu’à en effacer toute trace. Sœur Everlange, du clergé de la Sainte Lumière, rapporte cependant qu’une «&nbsp;sœur Ostesylve&nbsp;», sorcière inscrite au sabbat Malecarde, tomba voici quelques années au cimetière Tertrebois. Une vengeance tardive mérite donc d’être envisagée.</p>
+        <p>À ces rumeurs s’ajouta récemment une rencontre avec Aurore en personne. Elle me reçut dans un carrosse confortable, assez luxueux à mon sens, en compagnie de son garde du corps, Cassyan. Ce dernier porte bouc et moustache blonds et s’habille de pourpre. Méfiant et surprotecteur, il paraît d’une loyauté extrême envers sa cause.</p>
+        <p>Je trouvai l’héritière assez coquette pour une femme censée manquer de moyens&nbsp;; quant à sa voiture, son luxe montre qu’elle ne se borne pas à soigner son image, mais conserve des fonds, ou du moins un patrimoine. Mon oncle, Torval Forpin, m’assura qu’elle s’était montrée plutôt amicale envers lui et lui avait donné des conseils pour gagner&nbsp;; au manoir Malvoie, d’après lui, elle excelle aux jeux de cartes et de stratégie autant qu’aux jeux d’argent. En présence de Cassyan, elle me témoigna au contraire une certaine méfiance, à juste titre, je le concède.</p>
+        <p>L’entrevue resta froide. Je leur révélai sans détour avoir trouvé le médaillon&nbsp;; eux, en retour, me cachaient quelque chose, je le compris (à savoir à qui appartenait le bijou, initialement). Je ne l’avais pas sur moi et en pris prétexte pour me retirer, non sans promettre de le leur rendre s’ils venaient me trouver. Ils devaient alors quitter Corlain pour quelques jours.</p>
+        <p>Peu après, un intrus fouilla mes affaires dans la taverne où je dormais. L’aubergiste le chassa, et il repartit sans rien emporter&nbsp;; il cherchait, je crois, le médaillon. Plus tard, j’aperçus Cassyan qui s’intéressait de loin, l’air de rien, à mes faits et gestes. Je n’en doute plus&nbsp;: ils convoitent ce bijou, auquel Aurore semble tenir, et pour cause, même si je pense que ce n’est pas à mal.</p>
       </div>
     </div>
     <button type="button" class="lightbox-flip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>Retourner</button>

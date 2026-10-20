@@ -4,268 +4,420 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lame Blanche — Carte Interactive</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=IM+Fell+English:ital@0;1&display=swap');
 
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+  <!-- Polices chargées en <link> (plus rapide et plus fiable qu'un @import dans le CSS) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=IM+Fell+English:ital@0;1&display=swap" />
+
+  <style>
+    /* ══════════════════════════════════════════════
+       Palette
+       ══════════════════════════════════════════════ */
+    :root {
+      --bg:          #1a1208;
+      --ink:         #3b2510;   /* texte, encre des chemins de la carte */
+      --ink-deep:    #2a190a;
+      --leather:     #6b4c2a;   /* cadres */
+      --parchment:   #f5f0e0;
+      --parchment-2: #e9dcbc;
+      --muted:       #8a6a45;
+      --rule:        #c4a97a;
+
+      /* Marge autour de la carte : la carte occupe tout le reste de l'écran */
+      --pad: clamp(10px, 2.2vw, 28px);
+    }
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html {
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+      /* l'onde des marqueurs placés au bord ne doit pas créer de défilement horizontal */
+      overflow-x: hidden;
+      overflow-x: clip;
+    }
+    html.lb-open { overflow: hidden; }
 
     body {
-      background: #1a1208;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
       min-height: 100vh;
-      padding: 2rem;
-      font-family: 'IM Fell English', serif;
-    }
-
-    /* Conteneur qui empile verticalement la carte et le lecteur, centré dans la page */
-    .map-stage {
+      min-height: 100dvh;
       display: flex;
-      flex-direction: column;
       align-items: center;
-      width: 100%;
-      max-width: 900px;
+      justify-content: center;
+      padding: var(--pad);
+      background: radial-gradient(ellipse at 50% 45%, #2a1d0d 0%, var(--bg) 62%, #110b04 100%) fixed var(--bg);
+      font-family: 'IM Fell English', Georgia, serif;
+      color: var(--ink);
     }
 
+    /* ══════════════════════════════════════════════
+       Carte
+       La largeur s'ajuste pour que la carte entière tienne dans la fenêtre,
+       en largeur comme en hauteur, quelle que soit la résolution.
+       --map-ratio est recalculé en JS d'après les dimensions réelles de carte.jpg.
+       ══════════════════════════════════════════════ */
     .map-wrapper {
+      --map-ratio: 1.33333;
       position: relative;
-      display: inline-block;
-      max-width: 900px;
-      width: 100%;
+      flex: none;
+      width: min(100%, calc((100vh - 2 * var(--pad)) * var(--map-ratio)));
+      width: min(100%, calc((100dvh - 2 * var(--pad)) * var(--map-ratio)));
+      max-width: 2048px; /* au-delà, l'image serait agrandie et floue */
+      aspect-ratio: var(--map-ratio);
+      background: #c9cdb5;
+      box-shadow:
+        0 0 0 3px var(--leather),
+        0 0 0 4px var(--ink-deep),
+        8px 10px 32px rgba(0, 0, 0, 0.7);
     }
 
-    .map-wrapper img {
+    .map-img {
       display: block;
       width: 100%;
-      height: auto;
-      border: 3px solid #6b4c2a;
-      box-shadow: 0 0 0 1px #3b2510, 6px 6px 24px rgba(0,0,0,0.7);
-    }
-
-    /* ── Hotspot ── */
-    .hotspot {
-      position: absolute;
-      cursor: pointer;
-      transform: translate(-50%, -50%);
-      z-index: 10;
-    }
-
-    /* ── Bouton info discret dans un coin de la carte ── */
-    .map-title {
-      position: absolute;
-      top: 12px;
-      left: 12px;
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      background: rgba(245, 240, 224, 0.85);
-      border: 1.5px solid #6b4c2a;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
-      cursor: pointer;
-      z-index: 10;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+      height: 100%;
+      object-fit: cover;
+      -webkit-user-select: none;
       user-select: none;
-      /* Le texte du div est masqué : on n'affiche que l'icône SVG (::before) */
-      font-size: 0;
-      color: transparent;
-    }
-    .map-title::before {
-      content: '';
-      width: 17px;
-      height: 17px;
-      background-color: #3b2510;
-      -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4 19.5A2.5 2.5 0 0 1 6.5 17H20'/><path d='M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z'/><line x1='8' y1='7' x2='16' y2='7'/><line x1='8' y1='11' x2='16' y2='11'/><line x1='8' y1='15' x2='13' y2='15'/></svg>") no-repeat center / contain;
-              mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4 19.5A2.5 2.5 0 0 1 6.5 17H20'/><path d='M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z'/><line x1='8' y1='7' x2='16' y2='7'/><line x1='8' y1='11' x2='16' y2='11'/><line x1='8' y1='15' x2='13' y2='15'/></svg>") no-repeat center / contain;
-      transition: background-color 0.2s ease;
-    }
-    .map-title:hover {
-      background: #f5f0e0;
-      transform: scale(1.1);
-      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.35);
+      -webkit-user-drag: none;
     }
 
-    .hotspot-ring {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      border: 2.5px solid rgba(255,255,255,0.5);
+    .map-layer {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+    }
+
+    /* ══════════════════════════════════════════════
+       Marqueurs
+       Chaque marqueur se règle avec trois variables, directement dans le HTML :
+         --x, --y : position en % de la carte
+         --c      : couleur du lieu (la même que la zone dessinée sur la carte)
+       Les marqueurs « sortie » (lieux hors carte) ont en plus --dir : l'angle de la flèche.
+       ══════════════════════════════════════════════ */
+    .marker {
+      --size: 26px;
+      --hit: 40px;
+      position: absolute;
+      left: var(--x);
+      top: var(--y);
+      width: var(--hit);
+      height: var(--hit);
+      margin: calc(var(--hit) / -2) 0 0 calc(var(--hit) / -2);
+      z-index: 10;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: transform 0.2s ease;
-      animation: pulse 2.4s ease-in-out infinite;
+      padding: 0;
+      border: 0;
+      background: none;
+      color: inherit;
+      font: inherit;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      opacity: 0;
+      transition: opacity 0.5s ease;
     }
+    .map-wrapper.is-ready .marker { opacity: 1; }
+    .marker:focus { outline: none; }
 
-    .hotspot-dot {
-      width: 14px;
-      height: 14px;
+    /* Le médaillon : encre sombre (comme les chemins dessinés), liseré ivoire */
+    .marker-disc {
+      position: relative;
+      width: var(--size);
+      height: var(--size);
       border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at 35% 30%, #5a3c1d 0%, var(--ink) 55%, var(--ink-deep) 100%);
+      box-shadow:
+        inset 0 0 0 1.5px rgba(245, 240, 224, 0.9),
+        0 0 0 1px var(--ink-deep),
+        0 2px 5px rgba(0, 0, 0, 0.45);
+      transition: transform 0.18s ease, background 0.18s ease;
     }
 
-    .hotspot:hover .hotspot-ring {
+    /* La pierre colorée au centre */
+    .marker-gem {
+      width: 9px;
+      height: 9px;
+      background: var(--c);
+      transform: rotate(45deg);
+      box-shadow: 0 0 0 1.5px var(--parchment);
+      transition: transform 0.18s ease;
+    }
+
+    /* Flèche pour les lieux situés hors de la carte */
+    .marker--exit .marker-gem {
+      width: 13px;
+      height: 11px;
+      background: var(--parchment);
+      box-shadow: none;
+      transform: rotate(var(--dir, 0deg));
+      -webkit-clip-path: polygon(0 34%, 50% 34%, 50% 0, 100% 50%, 50% 100%, 50% 66%, 0 66%);
+              clip-path: polygon(0 34%, 50% 34%, 50% 0, 100% 50%, 50% 100%, 50% 66%, 0 66%);
+    }
+
+    /* Icône livre pour le bouton d'introduction */
+    .marker--info { --size: 32px; }
+    .marker-icon {
+      width: 16px;
+      height: 16px;
+      background-color: var(--parchment);
+      -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 19.5A2.5 2.5 0 0 1 6.5 17H20'/%3E%3Cpath d='M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z'/%3E%3Cline x1='8' y1='7' x2='16' y2='7'/%3E%3Cline x1='8' y1='11' x2='16' y2='11'/%3E%3Cline x1='8' y1='15' x2='13' y2='15'/%3E%3C/svg%3E") no-repeat center / contain;
+              mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 19.5A2.5 2.5 0 0 1 6.5 17H20'/%3E%3Cpath d='M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z'/%3E%3Cline x1='8' y1='7' x2='16' y2='7'/%3E%3Cline x1='8' y1='11' x2='16' y2='11'/%3E%3Cline x1='8' y1='15' x2='13' y2='15'/%3E%3C/svg%3E") no-repeat center / contain;
+    }
+
+    /* Onde d'encre : uniquement sur les lieux pas encore consultés */
+    .marker:not(.is-seen) .marker-disc::after {
+      content: '';
+      position: absolute;
+      inset: -3px;
+      border-radius: 50%;
+      border: 2px solid rgba(42, 25, 10, 0.55);
+      animation: inkRipple 3.2s ease-out infinite;
+      pointer-events: none;
+    }
+    @keyframes inkRipple {
+      0%   { transform: scale(0.9); opacity: 0.9; }
+      70%  { transform: scale(1.7); opacity: 0;   }
+      100% { transform: scale(1.7); opacity: 0;   }
+    }
+
+    /* Survol / focus clavier */
+    .marker:hover .marker-disc,
+    .marker:focus-visible .marker-disc { transform: scale(1.15); }
+    .marker:focus-visible .marker-disc {
+      outline: 2px solid var(--parchment);
+      outline-offset: 3px;
+    }
+
+    /* Lieu ouvert : le médaillon s'inverse (ivoire) */
+    .marker[aria-expanded="true"] .marker-disc {
+      background: radial-gradient(circle at 35% 30%, #fffdf5 0%, var(--parchment) 55%, var(--parchment-2) 100%);
+      box-shadow:
+        inset 0 0 0 2px var(--ink),
+        0 0 0 1px var(--parchment),
+        0 2px 6px rgba(0, 0, 0, 0.5);
       transform: scale(1.15);
     }
+    .marker[aria-expanded="true"] .marker-gem { box-shadow: 0 0 0 1.5px var(--ink); }
+    .marker--exit[aria-expanded="true"] .marker-gem,
+    .marker--info[aria-expanded="true"] .marker-icon { background-color: var(--ink); }
 
-    .hotspot-dot {
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
+    /* Nom du lieu au survol */
+    .marker-label {
+      position: absolute;
+      left: 50%;
+      bottom: calc(50% + var(--size) / 2 + 9px);
+      transform: translate(-50%, 4px);
+      white-space: nowrap;
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      line-height: 1.2;
+      color: var(--ink);
+      background: var(--parchment);
+      border: 1px solid var(--leather);
+      border-radius: 2px;
+      padding: 4px 9px 5px;
+      box-shadow: 2px 2px 0 var(--leather), 0 4px 12px rgba(0, 0, 0, 0.3);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s ease, transform 0.15s ease;
+    }
+    .marker.lbl-right .marker-label,
+    .marker.lbl-left  .marker-label {
+      bottom: auto;
+      top: 50%;
+    }
+    .marker.lbl-right .marker-label {
+      left: calc(50% + var(--size) / 2 + 9px);
+      transform: translate(-4px, -50%);
+    }
+    .marker.lbl-left .marker-label {
+      left: auto;
+      right: calc(50% + var(--size) / 2 + 9px);
+      transform: translate(4px, -50%);
+    }
+    .marker:hover .marker-label,
+    .marker:focus-visible .marker-label { opacity: 1; transform: translate(-50%, 0); }
+    .marker.lbl-right:hover .marker-label,
+    .marker.lbl-right:focus-visible .marker-label,
+    .marker.lbl-left:hover .marker-label,
+    .marker.lbl-left:focus-visible .marker-label { transform: translate(0, -50%); }
+    .marker[aria-expanded="true"] .marker-label { opacity: 0; }
+
+    /* Écrans tactiles : pas de survol, l'étiquette ne sert à rien */
+    @media (hover: none) {
+      .marker-label { display: none; }
     }
 
-    /* Couleurs par type */
-    .hs-green .hotspot-ring  { border-color: rgba(255,255,255,0.9); }
-    .hs-green .hotspot-dot   { background: #ffffff; box-shadow: 0 0 0 2px #3b2510; }
-
-    @keyframes pulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(255,255,255,0.6); }
-      50%       { box-shadow: 0 0 0 7px rgba(255,255,255,0); }
-    }
-
-    /* ── Popup ── */
+    /* ══════════════════════════════════════════════
+       Popups
+       --w : largeur souhaitée (réduite automatiquement si la carte est plus petite)
+       --c : couleur du lieu (losange de l'en-tête)
+       ══════════════════════════════════════════════ */
     .popup {
       position: absolute;
       z-index: 100;
-      width: 270px;
-      background: #f5f0e0;
-      border: 2px solid #6b4c2a;
-      border-radius: 3px;
-      padding: 1rem 1.1rem 0.9rem;
-      box-shadow: 4px 4px 0 #6b4c2a, 0 8px 32px rgba(0,0,0,0.5);
+      width: min(var(--w, 380px), calc(100% - 16px));
       display: none;
-      pointer-events: none;
+      flex-direction: column;
+      background: var(--parchment);
+      border: 2px solid var(--leather);
+      border-radius: 3px;
+      box-shadow: 4px 4px 0 var(--leather), 0 10px 32px rgba(0, 0, 0, 0.5);
+      color: var(--ink);
     }
-
     .popup.active {
-      display: block;
-      pointer-events: auto;
-      animation: fadeIn 0.18s ease;
+      display: flex;
+      animation: popIn 0.18s ease;
     }
+    .popup:focus { outline: none; }
 
-    @keyframes fadeIn {
+    @keyframes popIn {
       from { opacity: 0; transform: translateY(4px); }
       to   { opacity: 1; transform: translateY(0); }
     }
 
     .popup-header {
+      flex: none;
       display: flex;
       align-items: center;
-      gap: 8px;
-      margin-bottom: 7px;
+      gap: 10px;
+      margin: 0 16px;
+      padding: 13px 30px 9px 0;
+      border-bottom: 1px solid var(--rule);
     }
 
-    .popup-dot {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      flex-shrink: 0;
+    .popup-gem {
+      flex: none;
+      width: 10px;
+      height: 10px;
+      margin: 0 1px;
+      background: var(--c, var(--ink));
+      transform: rotate(45deg);
+      box-shadow: 0 0 0 1.5px var(--parchment), 0 0 0 2.5px var(--ink);
+    }
+    .popup--exit .popup-gem {
+      width: 13px;
+      height: 11px;
+      margin: 0;
+      background: var(--ink);
+      box-shadow: none;
+      transform: rotate(var(--dir, 0deg));
+      -webkit-clip-path: polygon(0 34%, 50% 34%, 50% 0, 100% 50%, 50% 100%, 50% 66%, 0 66%);
+              clip-path: polygon(0 34%, 50% 34%, 50% 0, 100% 50%, 50% 100%, 50% 66%, 0 66%);
     }
 
     .popup-title {
-      font-family: 'Cinzel', serif;
-      font-size: 13px;
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 14px;
       font-weight: 700;
-      color: #3b2510;
+      color: var(--ink);
       letter-spacing: 0.04em;
-      line-height: 1.2;
-    }
-
-    .popup-divider {
-      border: none;
-      border-top: 1px solid #c4a97a;
-      margin-bottom: 8px;
+      line-height: 1.25;
     }
 
     .popup-body {
-      font-size: 13px;
-      color: #3b2510;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: 11px 16px 14px;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 13.5px;
       line-height: 1.65;
-      font-family: 'Georgia', serif;
-      font-style: normal;
+      color: var(--ink);
+      scrollbar-width: thin;
+      scrollbar-color: var(--rule) transparent;
     }
+    .popup-body::-webkit-scrollbar { width: 8px; }
+    .popup-body::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 4px; border: 2px solid var(--parchment); }
+    .popup-body::-webkit-scrollbar-track { background: transparent; }
 
-    .popup-tag {
-      margin-top: 9px;
-      font-size: 10.5px;
-      color: #8a6a45;
-      text-align: right;
-      font-style: normal;
-      letter-spacing: 0.06em;
-    }
+    .popup-body p + p { margin-top: 0.85em; }
+    .popup-body::after { content: ''; display: block; clear: both; }
 
+    /* Bouton fermer */
     .popup-close {
       position: absolute;
-      top: 6px;
-      right: 8px;
+      top: 9px;
+      right: 9px;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      border: 1px solid transparent;
+      border-radius: 50%;
       background: none;
-      border: none;
+      color: var(--muted);
       cursor: pointer;
-      font-size: 14px;
-      color: #8a6a45;
-      line-height: 1;
-      pointer-events: auto;
+      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
     }
-    .popup-close:hover { color: #3b2510; }
+    .popup-close svg { width: 14px; height: 14px; }
+    .popup-close:hover {
+      background: var(--parchment-2);
+      border-color: var(--rule);
+      color: var(--ink);
+    }
+    .popup-close:focus-visible {
+      outline: 2px solid var(--leather);
+      outline-offset: 1px;
+    }
 
-    /* ── Petite flèche en bas du popup ── */
-    .popup::after {
+    /* Pointe du popup, orientée vers le marqueur */
+    .popup::before {
       content: '';
       position: absolute;
-      bottom: -10px;
-      left: var(--arrow-left, 20px);
-      width: 0; height: 0;
-      border-left: 8px solid transparent;
-      border-right: 8px solid transparent;
-      border-top: 10px solid #6b4c2a;
+      width: 12px;
+      height: 12px;
+      background: var(--parchment);
+      border: 2px solid var(--leather);
+      transform: rotate(45deg);
     }
-    /* flèche quand le popup est au-dessus → flèche en bas (défaut) */
-    /* flèche quand le popup est en-dessous → flèche en haut */
-    .popup.arrow-top::after {
-      bottom: auto;
-      top: -10px;
-      border-top: none;
-      border-bottom: 10px solid #6b4c2a;
-    }
-    .popup.arrow-left::after,
-    .popup.arrow-right::after {
-      display: none;
-    }
+    .popup.side-top::before    { bottom: -8px; left: calc(var(--arrow, 24px) - 8px); border-top-color: transparent;    border-left-color: transparent; }
+    .popup.side-bottom::before { top: -8px;    left: calc(var(--arrow, 24px) - 8px); border-bottom-color: transparent; border-right-color: transparent; }
+    .popup.side-left::before   { right: -8px;  top:  calc(var(--arrow, 24px) - 8px); border-bottom-color: transparent; border-left-color: transparent; }
+    .popup.side-right::before  { left: -8px;   top:  calc(var(--arrow, 24px) - 8px); border-top-color: transparent;    border-right-color: transparent; }
+    .popup.no-arrow::before    { display: none; }
 
-    /* ── Vignette image dans popup ── */
     /* ══════════════════════════════════════════════
-       Portrait cliquable dans un popup
-       Wrapper qui héberge le coin replié (page cornée)
+       Portrait cliquable dans un popup (page cornée)
        ══════════════════════════════════════════════ */
     .portrait-wrapper {
       position: relative;
       display: block;
-      width: 130px;
-      margin: 0 auto 10px auto;
-      cursor: pointer;
-      /* Léger soulèvement au survol */
+      float: right;
+      width: 118px;
+      margin: 3px 0 8px 14px;
+      padding: 0;
+      border: 0;
+      background: none;
+      cursor: zoom-in;
       transition: transform 0.25s ease, filter 0.25s ease;
     }
     .portrait-wrapper:hover {
       transform: translateY(-2px);
       filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.35));
     }
-    .portrait-wrapper img.popup-portrait {
+    .portrait-wrapper:focus-visible {
+      outline: 2px solid var(--leather);
+      outline-offset: 3px;
+    }
+    .portrait-wrapper img {
       display: block;
       width: 100%;
       height: auto;
-      border: 2px solid #6b4c2a;
+      border: 2px solid var(--leather);
       border-radius: 2px;
       box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.35);
-      transition: box-shadow 0.25s ease;
     }
-    .portrait-wrapper:hover img.popup-portrait {
-      box-shadow: 2px 2px 0 rgba(0, 0, 0, 0); /* l'ombre passe sur le wrapper */
-    }
-
-    /* Coin replié (page cornée) en haut à droite */
     .portrait-wrapper::after {
       content: '';
       position: absolute;
@@ -273,774 +425,446 @@
       right: 2px;
       width: 14px;
       height: 14px;
-      /* Triangle replié : haut-droit retiré, suggère une page tournée */
       background: linear-gradient(225deg,
-                  #d4b483 0%,
-                  #d4b483 48%,
-                  #6b4c2a 49%,
-                  #6b4c2a 52%,
-                  #f5f0e0 53%,
-                  #e8dcc0 100%);
+                  #d4b483 0%, #d4b483 48%,
+                  #6b4c2a 49%, #6b4c2a 52%,
+                  #f5f0e0 53%, #e8dcc0 100%);
       box-shadow: -1px 1px 2px rgba(0, 0, 0, 0.25);
-      transition: width 0.25s ease, height 0.25s ease,
-                  top 0.25s ease, right 0.25s ease;
+      transform-origin: top right;
+      transition: width 0.25s ease, height 0.25s ease;
+      animation: cornerPeek 6s ease-in-out infinite;
       pointer-events: none;
     }
     .portrait-wrapper:hover::after {
       width: 18px;
       height: 18px;
+      animation: none;
     }
-
-    /* Discret battement de survol-attention toutes les ~6s pour signaler la cliquabilité */
     @keyframes cornerPeek {
       0%, 92%, 100% { transform: scale(1); }
       94%           { transform: scale(1.18); }
       96%           { transform: scale(1); }
     }
-    .portrait-wrapper::after {
-      transform-origin: top right;
-      animation: cornerPeek 6s ease-in-out infinite;
-    }
-    .portrait-wrapper:hover::after {
-      animation: none; /* on coupe le micro-battement au survol */
-    }
-
-    .popup-thumb {
-      width: 90px;
-      height: 113px;
-      object-fit: cover;
-      object-position: center top;
-      border: 2px solid #6b4c2a;
-      border-radius: 2px;
-      float: right;
-      margin-left: 12px;
-      margin-bottom: 4px;
-      box-shadow: 2px 2px 6px rgba(0,0,0,0.35);
-    }
 
     /* ══════════════════════════════════════════════
-       Hotspot musique — note de croche dorée, sans cercle
+       Petits écrans : le popup devient un volet en bas de l'écran
        ══════════════════════════════════════════════ */
-    .music-hotspot {
-      position: absolute;
-      cursor: pointer;
-      transform: translate(-50%, -50%);
-      z-index: 10;
-      width: 31px;
-      height: 36px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      /* Petit halo doux pour aider la lecture sur la carte (pas un cercle visible) */
-      filter: drop-shadow(0 0 6px rgba(245, 240, 224, 0.55));
-      transition: transform 0.2s ease, filter 0.2s ease;
-    }
-    .music-hotspot:hover {
-      transform: translate(-50%, -50%) scale(1.15);
-      filter: drop-shadow(0 0 10px rgba(245, 240, 224, 0.9));
-    }
-    .music-hotspot svg {
-      width: 100%;
-      height: 100%;
-      transform-origin: 60% 80%;
-      transition: transform 0.2s ease;
-    }
-    /* Discret battement quand on ne joue PAS : juste pour attirer l'œil */
-    .music-hotspot:not(.playing) svg {
-      animation: noteBreathe 3s ease-in-out infinite;
-    }
-    @keyframes noteBreathe {
-      0%, 100% { transform: scale(1)    rotate(-4deg); }
-      50%      { transform: scale(1.06) rotate(-4deg); }
-    }
-    /* Pendant la lecture : balancement plus marqué */
-    .music-hotspot.playing svg {
-      animation: noteSway 1.6s ease-in-out infinite;
-    }
-    @keyframes noteSway {
-      0%, 100% { transform: rotate(-10deg); }
-      50%      { transform: rotate(8deg);   }
-    }
+    @media (max-width: 640px) {
+      .marker { --size: 22px; --hit: 36px; }
+      .marker--info { --size: 28px; }
 
-    /* ══════════════════════════════════════════════
-       Lecteur audio (parchemin sous la carte)
-       ══════════════════════════════════════════════ */
-    .audio-player {
-      width: 100%;
-      max-width: 900px;
-      margin-top: 1rem;
-      background: #f5f0e0;
-      border: 2px solid #6b4c2a;
-      border-radius: 3px;
-      box-shadow: 4px 4px 0 #6b4c2a, 0 8px 24px rgba(0,0,0,0.5);
-      padding: 0 1.1rem;
-      max-height: 0;
-      overflow: hidden;
-      opacity: 0;
-      transform: translateY(-6px);
-      transition: max-height 0.4s ease, opacity 0.3s ease,
-                  transform 0.4s ease, padding 0.4s ease, margin 0.4s ease;
-      box-sizing: border-box;
-    }
-    .audio-player.open {
-      max-height: 120px;
-      opacity: 1;
-      transform: translateY(0);
-      padding: 0.75rem 1.1rem;
-    }
-    .audio-player-inner {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      color: #3b2510;
-      font-family: 'Cinzel', serif;
-      font-size: 11px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-    /* Bouton lecture/pause */
-    .audio-play-btn {
-      flex-shrink: 0;
-      width: 38px;
-      height: 38px;
-      border-radius: 50%;
-      background: #f5f0e0;
-      border: 2px solid #6b4c2a;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #3b2510;
-      box-shadow: 2px 2px 0 #6b4c2a;
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
-      padding: 0;
-    }
-    .audio-play-btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 2px 3px 0 #6b4c2a;
-    }
-    .audio-play-btn:active {
-      transform: translateY(1px);
-      box-shadow: 2px 1px 0 #6b4c2a;
-    }
-    .audio-play-btn svg { width: 14px; height: 14px; }
-    .audio-play-btn .icon-pause { display: none; }
-    .audio-play-btn.playing .icon-play  { display: none; }
-    .audio-play-btn.playing .icon-pause { display: block; }
-
-    /* Titre + visualisation */
-    .audio-label {
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-weight: 700;
-      color: #3b2510;
-    }
-    /* Petites barres d'égaliseur décoratives */
-    .audio-bars {
-      display: inline-flex;
-      align-items: flex-end;
-      gap: 2px;
-      height: 14px;
-    }
-    .audio-bars span {
-      display: block;
-      width: 3px;
-      background: #8a6a45;
-      border-radius: 1px;
-      height: 30%;
-      transition: background 0.3s ease;
-    }
-    .audio-play-btn.playing ~ .audio-label .audio-bars span {
-      background: #6b4c2a;
-      animation: barsBounce 1s ease-in-out infinite;
-    }
-    .audio-play-btn.playing ~ .audio-label .audio-bars span:nth-child(1) { animation-delay: 0s;   }
-    .audio-play-btn.playing ~ .audio-label .audio-bars span:nth-child(2) { animation-delay: 0.2s; }
-    .audio-play-btn.playing ~ .audio-label .audio-bars span:nth-child(3) { animation-delay: 0.4s; }
-    .audio-play-btn.playing ~ .audio-label .audio-bars span:nth-child(4) { animation-delay: 0.15s; }
-    @keyframes barsBounce {
-      0%, 100% { height: 30%; }
-      50%      { height: 100%; }
-    }
-
-    /* Slider de volume */
-    .audio-volume {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      min-width: 0;
-    }
-    .audio-volume svg {
-      flex-shrink: 0;
-      width: 16px;
-      height: 16px;
-      color: #6b4c2a;
-    }
-    .audio-volume input[type="range"] {
-      flex: 1;
-      -webkit-appearance: none;
-      appearance: none;
-      background: transparent;
-      cursor: pointer;
-      min-width: 60px;
-    }
-    /* Piste */
-    .audio-volume input[type="range"]::-webkit-slider-runnable-track {
-      height: 4px;
-      background: linear-gradient(to right, #6b4c2a 0%, #6b4c2a var(--vol, 35%), #c4a97a var(--vol, 35%), #c4a97a 100%);
-      border-radius: 2px;
-    }
-    .audio-volume input[type="range"]::-moz-range-track {
-      height: 4px;
-      background: #c4a97a;
-      border-radius: 2px;
-    }
-    .audio-volume input[type="range"]::-moz-range-progress {
-      height: 4px;
-      background: #6b4c2a;
-      border-radius: 2px;
-    }
-    /* Pouce */
-    .audio-volume input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: #f5f0e0;
-      border: 2px solid #6b4c2a;
-      margin-top: -5px;
-      box-shadow: 1px 1px 0 #3b2510;
-      cursor: grab;
-    }
-    .audio-volume input[type="range"]::-moz-range-thumb {
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: #f5f0e0;
-      border: 2px solid #6b4c2a;
-      box-shadow: 1px 1px 0 #3b2510;
-      cursor: grab;
-    }
-    .audio-volume input[type="range"]:active::-webkit-slider-thumb { cursor: grabbing; }
-    .audio-volume input[type="range"]:active::-moz-range-thumb     { cursor: grabbing; }
-
-    /* Bouton fermer (range le lecteur) */
-    .audio-close {
-      flex-shrink: 0;
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: #8a6a45;
-      font-size: 16px;
-      padding: 4px 6px;
-      line-height: 1;
-      font-family: inherit;
-    }
-    .audio-close:hover { color: #3b2510; }
-
-    @media (max-width: 600px) {
-      .audio-player.open { max-height: 180px; }
-      .audio-player-inner {
-        flex-wrap: wrap;
-        gap: 0.6rem;
+      .popup {
+        position: fixed;
+        left: 8px;
+        right: 8px;
+        bottom: 8px;
+        top: auto;
+        width: auto;
+        max-height: 60vh;
+        max-height: 60dvh;
+        box-shadow: 0 -2px 0 var(--leather), 0 -8px 30px rgba(0, 0, 0, 0.55);
       }
-      .audio-volume { width: 100%; order: 3; }
+      .popup::before { display: none; }
+      .popup.active { animation: sheetIn 0.22s ease; }
+      @keyframes sheetIn {
+        from { opacity: 0; transform: translateY(16px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+      .portrait-wrapper { width: 96px; }
     }
-    /* ── Lightbox ── */
+
+    /* Téléphone tenu droit : carte en haut, pour qu'elle reste visible au-dessus du volet */
+    @media (max-width: 640px) and (orientation: portrait) {
+      body { align-items: flex-start; }
+    }
+
+    /* ══════════════════════════════════════════════
+       Lightbox (portrait agrandi, recto / verso)
+       ══════════════════════════════════════════════ */
     .lightbox {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.88);
-      display: none;
-      align-items: center;
-      justify-content: center;
       z-index: 1000;
-      padding: 2rem;
+      display: none;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: 4.5rem 1rem 2rem;
+      background: rgba(12, 8, 3, 0.9);
       cursor: zoom-out;
-      animation: fadeIn 0.2s ease;
     }
     .lightbox.active {
       display: flex;
+      animation: fade 0.2s ease;
     }
+    @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
 
-    /* Conteneur flip 3D */
+    /* La fiche et son bouton sont empilés normalement : le bouton suit toujours le bas de la fiche */
     .lightbox-card {
       position: relative;
-      width: min(420px, 90vw);
-      max-height: calc(90vh - 4rem); /* laisse de la place au bouton */
+      margin: auto;               /* centre la fiche, et laisse défiler si elle est trop haute */
+      width: min(440px, 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       perspective: 1600px;
       cursor: default;
-      transition: height 0.7s cubic-bezier(0.4, 0.0, 0.2, 1);
     }
     .lightbox-inner {
       position: relative;
       width: 100%;
-      transition: transform 0.7s cubic-bezier(0.4, 0.0, 0.2, 1);
-      transform-style: preserve-3d;
+      /* hauteur fixée en JS selon la face visible, animée pendant la rotation */
+      transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1),
+                  height 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+      -webkit-transform-style: preserve-3d;
+              transform-style: preserve-3d;
     }
-    .lightbox-card.flipped .lightbox-inner {
-      transform: rotateY(180deg);
-    }
+    .lightbox-card.flipped .lightbox-inner { transform: rotateY(180deg); }
 
     .lightbox-face {
-      width: 100%;
-      backface-visibility: hidden;
-      -webkit-backface-visibility: hidden;
-      background: #f5f0e0;
-      border: 3px solid #6b4c2a;
-      border-radius: 3px;
-      box-shadow: 0 0 0 1px #3b2510, 0 20px 60px rgba(0, 0, 0, 0.8);
-    }
-
-    /* Face avant : portrait */
-    .lightbox-front {
       position: absolute;
       top: 0;
       left: 0;
       right: 0;
-      padding: 1.2rem;
-      text-align: center;
+      -webkit-backface-visibility: hidden;
+              backface-visibility: hidden;
+      background: var(--parchment);
+      border: 3px solid var(--leather);
+      border-radius: 3px;
+      box-shadow: 0 0 0 1px var(--ink), 0 20px 60px rgba(0, 0, 0, 0.8);
+    }
+
+    .lightbox-front {
+      transform: rotateY(0deg); /* nécessaire pour Safari */
+      padding: 1.1rem;
     }
     .lightbox-front img {
-      max-width: 100%;
-      max-height: calc(90vh - 8rem);
-      width: auto;
-      height: auto;
       display: block;
       margin: 0 auto;
-    }
-
-    /* Lightbox yéti : image agrandie pour mieux correspondre à la hauteur du verso */
-    #lightbox-yeti .lightbox-front img {
-      width: 100%;
       max-width: 100%;
+      width: auto;
+      height: auto;
+      max-height: calc(100vh - 12rem);
+      max-height: calc(100dvh - 12rem);
+      object-fit: contain;
     }
+    #lightbox-yeti .lightbox-front img { width: 100%; }
 
-    /* Face arrière : texte */
     .lightbox-back {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
       transform: rotateY(180deg);
-      padding: 1.6rem 1.4rem 1.4rem;
-      font-family: 'Georgia', serif;
-      font-size: 13px;
-      color: #3b2510;
+      padding: 1.5rem 1.5rem 1.4rem;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 14px;
       line-height: 1.65;
+      color: var(--ink);
       text-align: left;
     }
     .lightbox-back h3 {
-      font-family: 'Cinzel', serif;
-      font-size: 14px;
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 15px;
       font-weight: 700;
-      color: #3b2510;
       letter-spacing: 0.04em;
-      margin-bottom: 8px;
       text-align: center;
-    }
-    .lightbox-back hr {
-      border: none;
-      border-top: 1px solid #c4a97a;
+      padding-bottom: 9px;
       margin-bottom: 12px;
+      border-bottom: 1px solid var(--rule);
     }
-    .lightbox-back p {
-      margin-bottom: 10px;
-    }
-    .lightbox-back p:last-child {
-      margin-bottom: 0;
-    }
+    .lightbox-back p + p { margin-top: 10px; }
 
-    /* Bouton flip */
-    .lightbox-flip {
-      position: absolute;
-      bottom: -3.2rem;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #f5f0e0;
-      border: 2px solid #6b4c2a;
-      border-radius: 3px;
-      padding: 0.5rem 1.1rem;
-      font-family: 'Cinzel', serif;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      color: #3b2510;
-      cursor: pointer;
-      box-shadow: 2px 2px 0 #6b4c2a, 0 4px 16px rgba(0, 0, 0, 0.5);
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
-      text-transform: uppercase;
-    }
-    .lightbox-flip:hover {
-      transform: translateX(-50%) translateY(-1px);
-      box-shadow: 2px 3px 0 #6b4c2a, 0 6px 20px rgba(0, 0, 0, 0.6);
-    }
-    .lightbox-flip:active {
-      transform: translateX(-50%) translateY(1px);
-      box-shadow: 2px 1px 0 #6b4c2a, 0 2px 8px rgba(0, 0, 0, 0.5);
-    }
-
-    .lightbox-close {
-      position: absolute;
-      top: 1.2rem;
-      right: 1.6rem;
-      background: none;
-      border: none;
-      color: #f5f0e0;
-      font-size: 2rem;
-      cursor: pointer;
-      line-height: 1;
-      font-family: 'Cinzel', serif;
-      transition: color 0.15s ease;
-      z-index: 10;
-    }
-    .lightbox-close:hover {
-      color: #c4a97a;
-    }
-
-    /* Bouton retour (revient au popup) */
+    /* Boutons de la lightbox */
+    .lightbox-flip,
     .lightbox-back-btn {
-      position: absolute;
-      top: 1.4rem;
-      left: 1.6rem;
-      background: none;
-      border: none;
-      color: #f5f0e0;
-      font-family: 'Cinzel', serif;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: 'Cinzel', Georgia, serif;
       font-size: 12px;
       font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      cursor: pointer;
+      letter-spacing: 0.06em;
       line-height: 1;
-      padding: 0.5rem 0.9rem;
-      border: 1.5px solid rgba(245, 240, 224, 0.5);
+      cursor: pointer;
       border-radius: 3px;
-      transition: all 0.15s ease;
-      z-index: 10;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, color 0.15s ease, border-color 0.15s ease;
     }
-    .lightbox-back-btn:hover {
-      color: #c4a97a;
-      border-color: #c4a97a;
+    .lightbox-flip svg,
+    .lightbox-back-btn svg { width: 14px; height: 14px; flex: none; transition: transform 0.4s ease; }
+
+    .lightbox-flip {
+      flex: none;
+      margin-top: 1.1rem;
+      padding: 0.6rem 1.1rem;
+      background: var(--parchment);
+      border: 2px solid var(--leather);
+      color: var(--ink);
+      box-shadow: 2px 2px 0 var(--leather), 0 4px 16px rgba(0, 0, 0, 0.5);
+      white-space: nowrap;
+    }
+    .lightbox-flip:hover  { transform: translateY(-1px); box-shadow: 2px 3px 0 var(--leather), 0 6px 20px rgba(0, 0, 0, 0.6); }
+    .lightbox-flip:active { transform: translateY(1px);  box-shadow: 2px 1px 0 var(--leather), 0 2px 8px rgba(0, 0, 0, 0.5); }
+    .lightbox-card.flipped .lightbox-flip svg { transform: scaleX(-1); }
+
+    .lightbox-back-btn {
+      position: fixed;
+      top: 1.1rem;
+      left: 1.1rem;
+      padding: 0.55rem 0.9rem;
+      background: rgba(12, 8, 3, 0.6);
+      border: 1.5px solid rgba(245, 240, 224, 0.5);
+      color: var(--parchment);
+      z-index: 2;
+    }
+    .lightbox-back-btn:hover { color: var(--rule); border-color: var(--rule); }
+
+    .lightbox-close {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      border: 1.5px solid rgba(245, 240, 224, 0.5);
+      border-radius: 50%;
+      background: rgba(12, 8, 3, 0.6);
+      color: var(--parchment);
+      cursor: pointer;
+      z-index: 2;
+      transition: color 0.15s ease, border-color 0.15s ease;
+    }
+    .lightbox-close svg { width: 16px; height: 16px; }
+    .lightbox-close:hover { color: var(--rule); border-color: var(--rule); }
+
+    .lightbox button:focus-visible {
+      outline: 2px solid var(--parchment);
+      outline-offset: 3px;
+    }
+
+    /* ══════════════════════════════════════════════
+       Animations réduites si le système le demande
+       ══════════════════════════════════════════════ */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+      .marker:not(.is-seen) .marker-disc::after { display: none; }
     }
   </style>
 </head>
 <body>
 
-<div class="map-stage">
+<main class="map-wrapper" id="mapWrapper">
+  <img src="carte.jpg" alt="Carte de la traverse de Lameblanche" class="map-img" id="mapImg" width="2048" height="1536" />
 
-<div class="map-wrapper" id="mapWrapper">
-  <img src="carte.jpg" alt="Carte de Lame Blanche" id="mapImg" />
+  <!-- ══════════════════════════════════════════════
+       MARQUEURS
+       ══════════════════════════════════════════════ -->
 
-  <!-- ══ TITRE CLIQUABLE : Traverse de Lameblanche ══ -->
-  <div class="map-title" data-popup="popup-traverse">Traverse de Lameblanche</div>
+  <!-- Calque des marqueurs : rogné au cadre de la carte -->
+  <div class="map-layer">
 
-  <!-- ══ POPUP TITRE ══ -->
-  <div class="popup" id="popup-traverse" style="width: 470px;">
-    <button class="popup-close" aria-label="Fermer">✕</button>
-    <div class="popup-header">
-      <div class="popup-dot" style="background:#301908;"></div>
-      <div class="popup-title">Traverse de Lameblanche</div>
-    </div>
-    <hr class="popup-divider" />
-    <div class="popup-body">
-      Lieu dont rendent compte la carte jointe et les notes qui s'y rapportent.
-      <br><br>
-      L'épaulement glaciaire se partage entre deux masses : un petit glacier enserré entre le refuge abandonné et le sentier menant à Gol Koval, et un second, plus imposant, qui enveloppe la caverne inexplorée du yéti. La fonte de ce dernier alimente un lac où affleure une petite île portant des ruines drust et trois stèles, dont l'une gît renversée ; les eaux s'en écoulent ensuite en cascade jusqu'aux pâtis d'Ormefange, au sud. Plusieurs cadavres, en majorité masculins, jonchent le secteur, accoutrés à la manière dont on se représente communément les géants qui peuplaient autrefois ces hauteurs : masques, bois de cerf, ossements et fourrures. Les blessures désignent un yéti adulte pour responsable du carnage, la traverse de Lameblanche paraissant constituer son territoire.
-      <br><br>
-      La découverte du site fit suite à l'observation d'une silhouette au sommet du glacier de Gol Koval : sans doute un sectaire de Roncécorche fuyant le massacre, ou cherchant une voie de descente avant de tomber, plus tard, sous les coups de la bête. La chronologie demeure incertaine. Les empreintes relevées rattachent toutefois le groupe à la trouée des Hauts-Laments, à l'est, plutôt qu'à Corvenac au sud ; encore que l'on ne saurait exclure que quelques rescapés en eussent effectué la descente.
-    </div>
-  </div>
-
-  <!-- ══ HOTSPOT 4 : Grotte des cultistes ══ -->
-  <div class="hotspot hs-green" style="left: 11.48%; top: 51.56%;" data-popup="popup-grotte">
-    <div class="hotspot-ring" style="border-color: rgba(255,255,255,0.9); width: 22px; height: 22px;">
-      <div class="hotspot-dot" style="background:#ffffff; box-shadow: 0 0 0 2px #3b2510; width: 10px; height: 10px;"></div>
-    </div>
-  </div>
-
-  <!-- ══ POPUP 4 ══ -->
-  <div class="popup" id="popup-grotte" style="width: 540px;">
-    <button class="popup-close" aria-label="Fermer">✕</button>
-    <div class="popup-header">
-      <div class="popup-dot" style="background:#7a9bbf;"></div>
-      <div class="popup-title">Grotte des cultistes</div>
-    </div>
-    <hr class="popup-divider" />
-    <div class="popup-body">
-      <span class="portrait-wrapper" data-lightbox="lightbox-aurore">
-        <img src="leportrait.png" alt="Portrait" class="popup-portrait" />
-      </span>
-      Au fond de la grotte s'étend un campement laissé à l'abandon par les sectateurs que le yéti a massacrés à l'extérieur. Tout indique que ceux-ci y résidaient et y célébraient leurs rituels. Un monolithe drust, entouré d'encens et de fétiches, signe leur passage, tout comme deux ronces en pot dont la présence à cette altitude défie l'entendement. Vraisemblablement issues de la forêt Cramoisie, à l'ouest. L'herbier de Joshua Barnes, chasseur de sorcières au service de Griseroche, leur consacre d'ailleurs une notice : selon lui, cette plante s'imprègne aisément de la magie des drust, ou en porterait par essence la marque, la corruption. Un parchemin gisant non loin, dédié à une certaine Roncécorche, s'apparente à un manuel d'initiation à cette même magie et prolonge l'énigme. Faute de renseignements sur cette Roncécorche, son nom servira désormais à désigner ses obligés ou ceux qui s'efforcent de se ranger à ses côtés.
-      <br><br>
-      Quatre cages encombrent aussi les lieux : deux de petites dimensions, taillées pour des enfants ou des animaux domestiques, et deux suffisamment spacieuses pour enfermer des adultes. Du sang humain en maculait l'intérieur, séché depuis peu, et des outils sacrificiels reposaient à portée de main. Demeurent enfin les restes d'un feu, des vivres gâtées et des vêtements civils sans propriétaire identifié. Peut-être des victimes du culte, peut-être ses officiants, peut-être les deux à la fois. Le pendentif Sandrenon figure au nombre de ces effets.
-    </div>
-  </div>
-
-  <!-- ══ HOTSPOT 5 : Grotte yéti adulte non explorée ══ -->
-  <div class="hotspot hs-green" style="left: 22.44%; top: 16.12%;" data-popup="popup-yeti">
-    <div class="hotspot-ring" style="border-color: rgba(255,255,255,0.9); width: 22px; height: 22px;">
-      <div class="hotspot-dot" style="background:#ffffff; box-shadow: 0 0 0 2px #3b2510; width: 10px; height: 10px;"></div>
-    </div>
-  </div>
-
-  <!-- ══ POPUP 5 ══ -->
-  <div class="popup" id="popup-yeti" style="width: 430px;">
-    <button class="popup-close" aria-label="Fermer">✕</button>
-    <div class="popup-header">
-      <div class="popup-dot" style="background:#a63b2e;"></div>
-      <div class="popup-title">Intérieur du glacier</div>
-    </div>
-    <hr class="popup-divider" />
-    <div class="popup-body">
-      <span class="portrait-wrapper" data-lightbox="lightbox-yeti">
-        <img src="yetiadulte.png" alt="Yéti adulte" class="popup-portrait" />
-      </span>
-      Le glacier s'ouvre sur une cavité inexplorée, trop périlleuse pour qu'on s'y engage seul, car il apparaît que le yéti adulte y entrepose ses proies. La glace lui tient probablement lieu de chambre-froide pour les préserver&nbsp;? L'hypothèse, si elle se vérifie, trahirait chez la bête une prévoyance remarquable, bien que cela n'épuise sans doute pas le mystère du lieu.
-      <br><br>
-      Le glacier de Gol Koval, plus en aval, dissimule des ruines drust en son cœur. Les anciens occupants y cherchaient-ils refuge, ou cherchaient-ils à soustraire quelque chose au regard des hommes&nbsp;? Cette interrogation explique vraisemblablement la tentative des cultistes de Roncécorche, qui voulurent forcer celui-ci et succombèrent sous les coups du yéti. Lequel dédaigna leurs corps, signe que sa férocité ne relevait pas de la faim, mais bien de la protection de son territoire.
-      <br><br>
-      Quelque chose, dans cette cavité, attire donc, peut-être, les adorateurs du roi-sorcier. La sagesse commanderait de laisser dormir ce secret, mais puisqu'il a éveillé des convoitises autant le percer. Qui ne connaît ni son ennemi ni lui-même perdra cent batailles. Reste à découvrir ce qui dort sous la glace en épargnant le yéti, gardien involontaire des intérêts de Drustvar.
-    </div>
-  </div>
-
-  <!-- ══ HOTSPOT MUSIQUE : croche stylisée dorée ══ -->
-  <div class="music-hotspot" id="musicHotspot" style="left: 98.00%; top: 3.45%;"
-       role="button" tabindex="0"
-       aria-label="Musique d'ambiance"
-       title="Musique d'ambiance">
-    <!-- Croche manuscrite : hampe courbe + drapeau ondulé + tête inclinée -->
-    <svg viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <defs>
-        <linearGradient id="noteGradGold" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"   stop-color="#f0d089"/>
-          <stop offset="55%"  stop-color="#c89345"/>
-          <stop offset="100%" stop-color="#8a5a1f"/>
-        </linearGradient>
-      </defs>
-      <!-- Hampe (légèrement courbe, comme tracée à la plume) -->
-      <path d="M 22 8
-               C 22.5 16, 23 24, 23 32"
-            fill="none"
-            stroke="url(#noteGradGold)"
-            stroke-width="3.2"
-            stroke-linecap="round"/>
-      <!-- Contour foncé de la hampe pour la lisibilité -->
-      <path d="M 22 8
-               C 22.5 16, 23 24, 23 32"
-            fill="none"
-            stroke="#3b2510"
-            stroke-width="1"
-            stroke-linecap="round"
-            opacity="0.6"/>
-      <!-- Drapeau ondulé / fanion qui flotte -->
-      <path d="M 22 8
-               Q 32 11, 33 18
-               Q 33.5 22, 30 24
-               Q 33 21, 30 17
-               Q 26 13, 22 14 Z"
-            fill="url(#noteGradGold)"
-            stroke="#3b2510"
-            stroke-width="1.2"
-            stroke-linejoin="round"/>
-      <!-- Tête de note : ellipse inclinée, façon ronde dessinée -->
-      <ellipse cx="16" cy="34" rx="7" ry="5"
-               transform="rotate(-22 16 34)"
-               fill="url(#noteGradGold)"
-               stroke="#3b2510"
-               stroke-width="1.4"/>
-      <!-- Petit reflet sur la tête (effet manuscrit) -->
-      <ellipse cx="14" cy="32" rx="2.2" ry="1"
-               transform="rotate(-22 14 32)"
-               fill="#f8e8b8"
-               opacity="0.7"/>
-    </svg>
-  </div>
-
-  <!-- ══ HOTSPOT 1 : Refuge abandonné (rond vert) ══ -->
-  <div class="hotspot hs-green" style="left: 77.27%; top: 67.53%;" data-popup="popup-refuge">
-    <div class="hotspot-ring" style="border-color: rgba(255,255,255,0.9); width: 22px; height: 22px;">
-      <div class="hotspot-dot" style="background:#ffffff; box-shadow: 0 0 0 2px #3b2510; width: 10px; height: 10px;"></div>
-    </div>
-  </div>
-
-  <!-- ══ HOTSPOT 2 : Crevasse bouchée (rond beige) ══ -->
-  <div class="hotspot hs-green" style="left: 21.29%; top: 35.33%;" data-popup="popup-crevasse">
-    <div class="hotspot-ring" style="border-color: rgba(255,255,255,0.9); width: 22px; height: 22px;">
-      <div class="hotspot-dot" style="background:#ffffff; box-shadow: 0 0 0 2px #3b2510; width: 10px; height: 10px;"></div>
-    </div>
-  </div>
-
-  <!-- ══ HOTSPOT 3 : Caverne yéti (rond rouge) ══ -->
-  <div class="hotspot hs-green" style="left: 62.41%; top: 39.93%;" data-popup="popup-caverne">
-    <div class="hotspot-ring" style="border-color: rgba(255,255,255,0.9); width: 22px; height: 22px;">
-      <div class="hotspot-dot" style="background:#ffffff; box-shadow: 0 0 0 2px #3b2510; width: 10px; height: 10px;"></div>
-    </div>
-  </div>
-
-  <!-- ══ HOTSPOT 6 : Pâtis d'Ormefange (rond brun très foncé) ══ -->
-  <!-- Sans anneau extérieur, juste le point avec contour foncé renforcé -->
-  <div class="hotspot hs-green" style="left: 81.82%; top: 95.70%;" data-popup="popup-patis">
-    <div class="hotspot-ring" style="border-color: transparent; width: 22px; height: 22px;">
-      <div class="hotspot-dot" style="background:#ffffff; box-shadow: 0 0 0 3px #3b2510; width: 10px; height: 10px;"></div>
-    </div>
-  </div>
-
-  <!-- ══ POPUP 6 ══ -->
-  <div class="popup" id="popup-patis" style="width: 400px;">
-    <button class="popup-close" aria-label="Fermer">✕</button>
-    <div class="popup-header">
-      <div class="popup-dot" style="background:#301908;"></div>
-      <div class="popup-title">Pâtis d'Ormefange</div>
-    </div>
-    <hr class="popup-divider" />
-    <div class="popup-body">
-      <span class="portrait-wrapper" data-lightbox="lightbox-corvenac">
-        <img src="embleme.png" alt="Emblème de Corvenac" class="popup-portrait" />
-      </span>
-      Les Pâtis d'Ormefange forment une petite vallée que les montagnes environnantes protègent des vents dominants. Malgré l'altitude, les saisons y demeurent assez clémentes pour permettre les travaux agricoles, même si l'hiver s'y montre parfois rude. La terre, riche et nourricière, soutient un élevage tourné principalement vers les moutons et les chèvres. L'humidité y règne toutefois sans partage, entretenant boue, sols spongieux, inondations et glissements de terrain.
-      <br><br>
-      L'unique bourg du secteur, Corvenac, prospère sous la protection de la maison Corven. Une mine de charbon, exploitée à proximité, garantit aux habitants une autonomie appréciable ainsi qu'un confort domestique acceptable.
-    </div>
-  </div>
-
-  <!-- ══ HOTSPOT 7 : Trouée des Hauts-Laments (rond brun très foncé) ══ -->
-  <div class="hotspot hs-green" style="left: 6.46%; top: 85.52%;" data-popup="popup-trouee">
-    <div class="hotspot-ring" style="border-color: rgba(255,255,255,0.9); width: 22px; height: 22px;">
-      <div class="hotspot-dot" style="background:#ffffff; box-shadow: 0 0 0 2px #3b2510; width: 10px; height: 10px;"></div>
-    </div>
-  </div>
-
-  <!-- ══ POPUP 7 ══ -->
-  <div class="popup" id="popup-trouee" style="width: 400px;">
-    <button class="popup-close" aria-label="Fermer">✕</button>
-    <div class="popup-header">
-      <div class="popup-dot" style="background:#301908;"></div>
-      <div class="popup-title">Trouée des Hauts-Laments</div>
-    </div>
-    <hr class="popup-divider" />
-    <div class="popup-body">
-      À l'ouest, la Trouée des Hauts-Laments serpente à travers les montagnes et demeure la seule voie terrestre reliant Corvenac au reste de la région. Conjuguée à des reliefs presque infranchissables, cette unique brèche explique à elle seule l'isolement du bourg. Le passage débouche soit sur les contreforts menant à Griseroche, fief ancestral de la maison Forpin, soit sur les côtes occidentales de Drustvar, à proximité de Butte-du-Faucon et donc de la forêt Cramoisie.
-      <br><br>
-      Le secteur, sauvage et peu accueillant, vit jadis s'éteindre les derniers drust refoulés par la milice d'Arom Malvoie. La présence de bastions oubliés ou de ruines y demeure vraisemblable.
-    </div>
-  </div>
-
-  <!-- ══ HOTSPOT 8 : Gol Koval ══ -->
-  <div class="hotspot hs-green" style="left: 98.33%; top: 67.48%;" data-popup="popup-golkoval">
-    <div class="hotspot-ring" style="border-color: rgba(255,255,255,0.9); width: 22px; height: 22px;">
-      <div class="hotspot-dot" style="background:#ffffff; box-shadow: 0 0 0 2px #3b2510; width: 10px; height: 10px;"></div>
-    </div>
-  </div>
-
-  <!-- ══ POPUP 8 : Gol Koval ══ -->
-  <div class="popup" id="popup-golkoval" style="width: 400px;">
-    <button class="popup-close" aria-label="Fermer">✕</button>
-    <div class="popup-header">
-      <div class="popup-dot" style="background:#301908;"></div>
-      <div class="popup-title">Gol Koval</div>
-    </div>
-    <hr class="popup-divider" />
-    <div class="popup-body">
-      Aux confins du domaine Tertrebois et de Val-Archer s'étendent des ruines ensevelies sous un glacier, longtemps laissées à l'abandon faute de visiteurs prêts à braver leur réputation. Durant la Quatrième Guerre, d'anciens cairns dressés sur place se réactivèrent, ranimant les morts-vivants drust qui dormaient sous la glace, ainsi que les golems de pierre nés de leur art. Leur destruction rendit le site à son isolement, si l'on excepte les quelques créatures égarées du Fléau déchaîné qui y errent depuis l'an trente-cinq.
-      <br><br>
-      Récemment, une reconnaissance conduite en compagnie de la forestière Rheva Grisnoyer et du druide Edward Mornebruine permit d'y distinguer une silhouette au sommet du glacier. L'ascension qui suivit livra des empreintes dont la trace mena jusqu'à la traverse de Lameblanche que présente la carte. Tout porte à croire qu'un sectateur de Roncécorche y cherchait une voie de descente, soit pour rejoindre Gol Koval, soit pour gagner l'est de Drustvar depuis la forêt Cramoisie en contournant la Ferté-d'Arom, et donc l'Ordre des Braises. À moins qu'il ne fuyait le yéti, pour peu que le massacre perpétré par ce dernier eût précédé la rencontre.
-      <br><br>
-      Une enquête conduite parallèlement à Gol Koval par l'inquisiteur Blancmistral et la sœur Everlange y dévoila la présence d'un autre groupe d'adorateurs des drust. Reste à déterminer s'il s'agit d'une cellule alliée à celle de Lameblanche, ou des deux ramifications d'une même secte.
-    </div>
-  </div>
-
-  <!-- ══ POPUP 3 ══ -->
-  <div class="popup" id="popup-caverne" style="width: 370px;">
-    <button class="popup-close" aria-label="Fermer">✕</button>
-    <div class="popup-header">
-      <div class="popup-dot" style="background:#a63b2e;"></div>
-      <div class="popup-title">Caverne explorée</div>
-    </div>
-    <hr class="popup-divider" />
-    <div class="popup-body">
-      Des humains occupèrent cette grotte avant que le yéti n'en fasse son antre, probablement après les avoir chassés ou tués. Leur passage ne se laisse deviner qu'à travers un campement précaire éventré, dont les pauvres reliques résistent à toute datation comme à toute identification. Partisans de Roncécorche, trappeurs ou simples voyageurs ?
-      <br><br>
-      Des ossements traînent par endroits sur le sol, mais leur morphologie écarte une origine humaine et désigne plutôt des proies traînées jusqu'ici par la bête pour nourrir sa progéniture. Un petit au moins, embusqué derrière un rocher au fond.
-      <br><br>
-      Rien ne motive un examen plus poussé.
-    </div>
-  </div>
-
-  <!-- ══ POPUP 2 ══ -->
-  <div class="popup" id="popup-crevasse" style="width: 310px;">
-    <button class="popup-close" aria-label="Fermer">✕</button>
-    <div class="popup-header">
-      <div class="popup-dot" style="background:#b49b6e;"></div>
-      <div class="popup-title">Crevasse bouchée</div>
-    </div>
-    <hr class="popup-divider" />
-    <div class="popup-body">
-      Deux corps gisaient au pied d'une fissure colmatée par la glace. Le passage, trop resserré pour livrer accès à un yéti adulte, soulève une interrogation : s'enfonce-t-il dans le glacier comme galerie annexe, ou marque-t-il l'entrée d'une cavité autonome ?
-    </div>
-  </div>
-
-  <!-- ══ POPUP 1 ══ -->
-  <div class="popup" id="popup-refuge" style="width: 420px;">
-    <button class="popup-close" aria-label="Fermer">✕</button>
-    <div class="popup-header">
-      <div class="popup-dot" style="background:#4a9e6e;"></div>
-      <div class="popup-title">Refuge abandonné</div>
-    </div>
-    <hr class="popup-divider" />
-    <div class="popup-body">
-      Cramponnée à la paroi rocheuse, une tour de guet domine la vallée des pâtis d'Ormefange, au sud. Tout l'édifice tient en une seule pièce. Le pan exposé au vide s'effrite, livrant passage au vent. L'isolation, bien que sommaire, reste tolérable pour quiconque consent à se passer de confort. La porte, dont le mécanisme s'est grippé, oblige à ramper dessous pour pénétrer à l'intérieur ou sortir, faute de quoi quelqu'un disposant d'une force suffisante pourrait peut-être la remettre en place.
-      <br><br>
-      Une cheminée occupe le centre du dispositif et paraît destinée à acheminer de l'huile vers le fanal qui coiffe le sommet du bâtiment, à la manière d'un phare. Le rayonnement doit porter loin, encore qu'aucun essai n'en confirme le fonctionnement. L'allumeur est sans doute bon à remplacer. Pour le reste, le mobilier se borne à quelques lits et à du matériel endommagé.
-    </div>
-
-  </div>
-
-</div><!-- /map-wrapper -->
-
-<!-- ══ LECTEUR AUDIO (déplié au clic sur la note) ══ -->
-<div class="audio-player" id="audioPlayer">
-  <div class="audio-player-inner">
-    <button class="audio-play-btn" id="audioPlayBtn" aria-label="Lecture">
-      <svg class="icon-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-        <path d="M6 4l14 8-14 8V4z"/>
-      </svg>
-      <svg class="icon-pause" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-        <rect x="6" y="4" width="4" height="16" rx="0.5"/>
-        <rect x="14" y="4" width="4" height="16" rx="0.5"/>
-      </svg>
+    <!-- Introduction : Traverse de Lameblanche (coin haut gauche) -->
+    <button type="button" class="marker marker--info lbl-right" style="--x: 30px; --y: 30px;" data-popup="popup-traverse" aria-expanded="false">
+      <span class="marker-disc"><span class="marker-icon" aria-hidden="true"></span></span>
+      <span class="marker-label">Traverse de Lameblanche</span>
     </button>
-    <div class="audio-label">
-      <span class="audio-bars" aria-hidden="true">
-        <span></span><span></span><span></span><span></span>
-      </span>
-      Ambiance
+
+    <!-- Intérieur du glacier (yéti adulte) -->
+    <button type="button" class="marker" style="--x: 22.44%; --y: 16.12%; --c: #a63b2e;" data-popup="popup-yeti" aria-expanded="false">
+      <span class="marker-disc"><span class="marker-gem"></span></span>
+      <span class="marker-label">Intérieur du glacier</span>
+    </button>
+
+    <!-- Crevasse bouchée -->
+    <button type="button" class="marker" style="--x: 21.29%; --y: 35.33%; --c: #b49b6e;" data-popup="popup-crevasse" aria-expanded="false">
+      <span class="marker-disc"><span class="marker-gem"></span></span>
+      <span class="marker-label">Crevasse bouchée</span>
+    </button>
+
+    <!-- Grotte des cultistes -->
+    <button type="button" class="marker lbl-right" style="--x: 11.48%; --y: 51.56%; --c: #7a9bbf;" data-popup="popup-grotte" aria-expanded="false">
+      <span class="marker-disc"><span class="marker-gem"></span></span>
+      <span class="marker-label">Grotte des cultistes</span>
+    </button>
+
+    <!-- Caverne explorée -->
+    <button type="button" class="marker" style="--x: 62.41%; --y: 39.93%; --c: #a63b2e;" data-popup="popup-caverne" aria-expanded="false">
+      <span class="marker-disc"><span class="marker-gem"></span></span>
+      <span class="marker-label">Caverne explorée</span>
+    </button>
+
+    <!-- Refuge abandonné -->
+    <button type="button" class="marker" style="--x: 77.27%; --y: 67.53%; --c: #4a9e6e;" data-popup="popup-refuge" aria-expanded="false">
+      <span class="marker-disc"><span class="marker-gem"></span></span>
+      <span class="marker-label">Refuge abandonné</span>
+    </button>
+
+    <!-- Sorties (lieux hors carte) : la flèche indique la direction -->
+    <button type="button" class="marker marker--exit lbl-right" style="--x: 6.46%; --y: 85.52%; --dir: 180deg;" data-popup="popup-trouee" aria-expanded="false">
+      <span class="marker-disc"><span class="marker-gem"></span></span>
+      <span class="marker-label">Trouée des Hauts-Laments</span>
+    </button>
+
+    <button type="button" class="marker marker--exit lbl-left" style="--x: 81.82%; --y: 95.70%; --dir: 90deg;" data-popup="popup-patis" aria-expanded="false">
+      <span class="marker-disc"><span class="marker-gem"></span></span>
+      <span class="marker-label">Pâtis d'Ormefange</span>
+    </button>
+
+    <button type="button" class="marker marker--exit lbl-left" style="--x: 97.90%; --y: 67.48%; --dir: 0deg;" data-popup="popup-golkoval" aria-expanded="false">
+      <span class="marker-disc"><span class="marker-gem"></span></span>
+      <span class="marker-label">Gol Koval</span>
+    </button>
+
+
+  </div><!-- /map-layer -->
+
+  <!-- ══════════════════════════════════════════════
+       POPUPS
+       ══════════════════════════════════════════════ -->
+
+  <!-- ══ Traverse de Lameblanche ══ -->
+  <div class="popup" id="popup-traverse" role="dialog" aria-labelledby="t-traverse" tabindex="-1" style="--w: 470px; --c: #301908;">
+    <button type="button" class="popup-close" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <div class="popup-header">
+      <span class="popup-gem" aria-hidden="true"></span>
+      <h2 class="popup-title" id="t-traverse">Traverse de Lameblanche</h2>
     </div>
-    <div class="audio-volume">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor"/>
-        <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
-        <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
-      </svg>
-      <input type="range" id="audioVolume" min="0" max="100" value="35"
-             aria-label="Volume" />
+    <div class="popup-body">
+      <p>Lieu dont rendent compte la carte jointe et les notes qui s'y rapportent.</p>
+      <p>L'épaulement glaciaire se partage entre deux masses : un petit glacier enserré entre le refuge abandonné et le sentier menant à Gol Koval, et un second, plus imposant, qui enveloppe la caverne inexplorée du yéti. La fonte de ce dernier alimente un lac où affleure une petite île portant des ruines drust et trois stèles, dont l'une gît renversée ; les eaux s'en écoulent ensuite en cascade jusqu'aux pâtis d'Ormefange, au sud. Plusieurs cadavres, en majorité masculins, jonchent le secteur, accoutrés à la manière dont on se représente communément les géants qui peuplaient autrefois ces hauteurs : masques, bois de cerf, ossements et fourrures. Les blessures désignent un yéti adulte pour responsable du carnage, la traverse de Lameblanche paraissant constituer son territoire.</p>
+      <p>La découverte du site fit suite à l'observation d'une silhouette au sommet du glacier de Gol Koval : sans doute un sectaire de Roncécorche fuyant le massacre, ou cherchant une voie de descente avant de tomber, plus tard, sous les coups de la bête. La chronologie demeure incertaine. Les empreintes relevées rattachent toutefois le groupe à la trouée des Hauts-Laments, à l'est, plutôt qu'à Corvenac au sud ; encore que l'on ne saurait exclure que quelques rescapés en eussent effectué la descente.</p>
     </div>
-    <button class="audio-close" id="audioClose" aria-label="Fermer le lecteur" title="Fermer">✕</button>
   </div>
-</div>
-<audio id="ambientAudio" src="Musique.mp3" loop preload="auto"></audio>
 
-</div><!-- /map-stage -->
+  <!-- ══ Grotte des cultistes ══ -->
+  <div class="popup" id="popup-grotte" role="dialog" aria-labelledby="t-grotte" tabindex="-1" style="--w: 540px; --c: #7a9bbf;">
+    <button type="button" class="popup-close" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <div class="popup-header">
+      <span class="popup-gem" aria-hidden="true"></span>
+      <h2 class="popup-title" id="t-grotte">Grotte des cultistes</h2>
+    </div>
+    <div class="popup-body">
+      <button type="button" class="portrait-wrapper" data-lightbox="lightbox-aurore" aria-label="Agrandir le portrait d'Aurore Sandrenon">
+        <img src="leportrait.png" alt="" />
+      </button>
+      <p>Au fond de la grotte s'étend un campement laissé à l'abandon par les sectateurs que le yéti a massacrés à l'extérieur. Tout indique que ceux-ci y résidaient et y célébraient leurs rituels. Un monolithe drust, entouré d'encens et de fétiches, signe leur passage, tout comme deux ronces en pot dont la présence à cette altitude défie l'entendement. Vraisemblablement issues de la forêt Cramoisie, à l'ouest. L'herbier de Joshua Barnes, chasseur de sorcières au service de Griseroche, leur consacre d'ailleurs une notice : selon lui, cette plante s'imprègne aisément de la magie des drust, ou en porterait par essence la marque, la corruption. Un parchemin gisant non loin, dédié à une certaine Roncécorche, s'apparente à un manuel d'initiation à cette même magie et prolonge l'énigme. Faute de renseignements sur cette Roncécorche, son nom servira désormais à désigner ses obligés ou ceux qui s'efforcent de se ranger à ses côtés.</p>
+      <p>Quatre cages encombrent aussi les lieux : deux de petites dimensions, taillées pour des enfants ou des animaux domestiques, et deux suffisamment spacieuses pour enfermer des adultes. Du sang humain en maculait l'intérieur, séché depuis peu, et des outils sacrificiels reposaient à portée de main. Demeurent enfin les restes d'un feu, des vivres gâtées et des vêtements civils sans propriétaire identifié. Peut-être des victimes du culte, peut-être ses officiants, peut-être les deux à la fois. Le pendentif Sandrenon figure au nombre de ces effets.</p>
+    </div>
+  </div>
 
-<!-- ══ LIGHTBOX 1 : Aurore Sandrenon ══ -->
-<div class="lightbox" id="lightbox-aurore" data-lightbox-name="aurore">
-  <button class="lightbox-back-btn lightbox-back-trigger" aria-label="Retour">⟵ Retour</button>
-  <button class="lightbox-close" aria-label="Fermer">✕</button>
+  <!-- ══ Intérieur du glacier ══ -->
+  <div class="popup" id="popup-yeti" role="dialog" aria-labelledby="t-yeti" tabindex="-1" style="--w: 430px; --c: #a63b2e;">
+    <button type="button" class="popup-close" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <div class="popup-header">
+      <span class="popup-gem" aria-hidden="true"></span>
+      <h2 class="popup-title" id="t-yeti">Intérieur du glacier</h2>
+    </div>
+    <div class="popup-body">
+      <button type="button" class="portrait-wrapper" data-lightbox="lightbox-yeti" aria-label="Agrandir le portrait du yéti adulte">
+        <img src="yetiadulte.png" alt="" />
+      </button>
+      <p>Le glacier s'ouvre sur une cavité inexplorée, trop périlleuse pour qu'on s'y engage seul, car il apparaît que le yéti adulte y entrepose ses proies. La glace lui tient probablement lieu de chambre-froide pour les préserver&nbsp;? L'hypothèse, si elle se vérifie, trahirait chez la bête une prévoyance remarquable, bien que cela n'épuise sans doute pas le mystère du lieu.</p>
+      <p>Le glacier de Gol Koval, plus en aval, dissimule des ruines drust en son cœur. Les anciens occupants y cherchaient-ils refuge, ou cherchaient-ils à soustraire quelque chose au regard des hommes&nbsp;? Cette interrogation explique vraisemblablement la tentative des cultistes de Roncécorche, qui voulurent forcer celui-ci et succombèrent sous les coups du yéti. Lequel dédaigna leurs corps, signe que sa férocité ne relevait pas de la faim, mais bien de la protection de son territoire.</p>
+      <p>Quelque chose, dans cette cavité, attire donc, peut-être, les adorateurs du roi-sorcier. La sagesse commanderait de laisser dormir ce secret, mais puisqu'il a éveillé des convoitises autant le percer. Qui ne connaît ni son ennemi ni lui-même perdra cent batailles. Reste à découvrir ce qui dort sous la glace en épargnant le yéti, gardien involontaire des intérêts de Drustvar.</p>
+    </div>
+  </div>
+
+  <!-- ══ Crevasse bouchée ══ -->
+  <div class="popup" id="popup-crevasse" role="dialog" aria-labelledby="t-crevasse" tabindex="-1" style="--w: 310px; --c: #b49b6e;">
+    <button type="button" class="popup-close" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <div class="popup-header">
+      <span class="popup-gem" aria-hidden="true"></span>
+      <h2 class="popup-title" id="t-crevasse">Crevasse bouchée</h2>
+    </div>
+    <div class="popup-body">
+      <p>Deux corps gisaient au pied d'une fissure colmatée par la glace. Le passage, trop resserré pour livrer accès à un yéti adulte, soulève une interrogation : s'enfonce-t-il dans le glacier comme galerie annexe, ou marque-t-il l'entrée d'une cavité autonome ?</p>
+    </div>
+  </div>
+
+  <!-- ══ Caverne explorée ══ -->
+  <div class="popup" id="popup-caverne" role="dialog" aria-labelledby="t-caverne" tabindex="-1" style="--w: 370px; --c: #a63b2e;">
+    <button type="button" class="popup-close" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <div class="popup-header">
+      <span class="popup-gem" aria-hidden="true"></span>
+      <h2 class="popup-title" id="t-caverne">Caverne explorée</h2>
+    </div>
+    <div class="popup-body">
+      <p>Des humains occupèrent cette grotte avant que le yéti n'en fasse son antre, probablement après les avoir chassés ou tués. Leur passage ne se laisse deviner qu'à travers un campement précaire éventré, dont les pauvres reliques résistent à toute datation comme à toute identification. Partisans de Roncécorche, trappeurs ou simples voyageurs ?</p>
+      <p>Des ossements traînent par endroits sur le sol, mais leur morphologie écarte une origine humaine et désigne plutôt des proies traînées jusqu'ici par la bête pour nourrir sa progéniture. Un petit au moins, embusqué derrière un rocher au fond.</p>
+      <p>Rien ne motive un examen plus poussé.</p>
+    </div>
+  </div>
+
+  <!-- ══ Refuge abandonné ══ -->
+  <div class="popup" id="popup-refuge" role="dialog" aria-labelledby="t-refuge" tabindex="-1" style="--w: 420px; --c: #4a9e6e;">
+    <button type="button" class="popup-close" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <div class="popup-header">
+      <span class="popup-gem" aria-hidden="true"></span>
+      <h2 class="popup-title" id="t-refuge">Refuge abandonné</h2>
+    </div>
+    <div class="popup-body">
+      <p>Cramponnée à la paroi rocheuse, une tour de guet domine la vallée des pâtis d'Ormefange, au sud. Tout l'édifice tient en une seule pièce. Le pan exposé au vide s'effrite, livrant passage au vent. L'isolation, bien que sommaire, reste tolérable pour quiconque consent à se passer de confort. La porte, dont le mécanisme s'est grippé, oblige à ramper dessous pour pénétrer à l'intérieur ou sortir, faute de quoi quelqu'un disposant d'une force suffisante pourrait peut-être la remettre en place.</p>
+      <p>Une cheminée occupe le centre du dispositif et paraît destinée à acheminer de l'huile vers le fanal qui coiffe le sommet du bâtiment, à la manière d'un phare. Le rayonnement doit porter loin, encore qu'aucun essai n'en confirme le fonctionnement. L'allumeur est sans doute bon à remplacer. Pour le reste, le mobilier se borne à quelques lits et à du matériel endommagé.</p>
+    </div>
+  </div>
+
+  <!-- ══ Trouée des Hauts-Laments ══ -->
+  <div class="popup popup--exit" id="popup-trouee" role="dialog" aria-labelledby="t-trouee" tabindex="-1" style="--w: 400px; --dir: 180deg;">
+    <button type="button" class="popup-close" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <div class="popup-header">
+      <span class="popup-gem" aria-hidden="true"></span>
+      <h2 class="popup-title" id="t-trouee">Trouée des Hauts-Laments</h2>
+    </div>
+    <div class="popup-body">
+      <p>À l'ouest, la Trouée des Hauts-Laments serpente à travers les montagnes et demeure la seule voie terrestre reliant Corvenac au reste de la région. Conjuguée à des reliefs presque infranchissables, cette unique brèche explique à elle seule l'isolement du bourg. Le passage débouche soit sur les contreforts menant à Griseroche, fief ancestral de la maison Forpin, soit sur les côtes occidentales de Drustvar, à proximité de Butte-du-Faucon et donc de la forêt Cramoisie.</p>
+      <p>Le secteur, sauvage et peu accueillant, vit jadis s'éteindre les derniers drust refoulés par la milice d'Arom Malvoie. La présence de bastions oubliés ou de ruines y demeure vraisemblable.</p>
+    </div>
+  </div>
+
+  <!-- ══ Pâtis d'Ormefange ══ -->
+  <div class="popup popup--exit" id="popup-patis" role="dialog" aria-labelledby="t-patis" tabindex="-1" style="--w: 400px; --dir: 90deg;">
+    <button type="button" class="popup-close" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <div class="popup-header">
+      <span class="popup-gem" aria-hidden="true"></span>
+      <h2 class="popup-title" id="t-patis">Pâtis d'Ormefange</h2>
+    </div>
+    <div class="popup-body">
+      <button type="button" class="portrait-wrapper" data-lightbox="lightbox-corvenac" aria-label="Agrandir l'emblème de Corvenac">
+        <img src="embleme.png" alt="" />
+      </button>
+      <p>Les Pâtis d'Ormefange forment une petite vallée que les montagnes environnantes protègent des vents dominants. Malgré l'altitude, les saisons y demeurent assez clémentes pour permettre les travaux agricoles, même si l'hiver s'y montre parfois rude. La terre, riche et nourricière, soutient un élevage tourné principalement vers les moutons et les chèvres. L'humidité y règne toutefois sans partage, entretenant boue, sols spongieux, inondations et glissements de terrain.</p>
+      <p>L'unique bourg du secteur, Corvenac, prospère sous la protection de la maison Corven. Une mine de charbon, exploitée à proximité, garantit aux habitants une autonomie appréciable ainsi qu'un confort domestique acceptable.</p>
+    </div>
+  </div>
+
+  <!-- ══ Gol Koval ══ -->
+  <div class="popup popup--exit" id="popup-golkoval" role="dialog" aria-labelledby="t-golkoval" tabindex="-1" style="--w: 400px; --dir: 0deg;">
+    <button type="button" class="popup-close" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <div class="popup-header">
+      <span class="popup-gem" aria-hidden="true"></span>
+      <h2 class="popup-title" id="t-golkoval">Gol Koval</h2>
+    </div>
+    <div class="popup-body">
+      <p>Aux confins du domaine Tertrebois et de Val-Archer s'étendent des ruines ensevelies sous un glacier, longtemps laissées à l'abandon faute de visiteurs prêts à braver leur réputation. Durant la Quatrième Guerre, d'anciens cairns dressés sur place se réactivèrent, ranimant les morts-vivants drust qui dormaient sous la glace, ainsi que les golems de pierre nés de leur art. Leur destruction rendit le site à son isolement, si l'on excepte les quelques créatures égarées du Fléau déchaîné qui y errent depuis l'an trente-cinq.</p>
+      <p>Récemment, une reconnaissance conduite en compagnie de la forestière Rheva Grisnoyer et du druide Edward Mornebruine permit d'y distinguer une silhouette au sommet du glacier. L'ascension qui suivit livra des empreintes dont la trace mena jusqu'à la traverse de Lameblanche que présente la carte. Tout porte à croire qu'un sectateur de Roncécorche y cherchait une voie de descente, soit pour rejoindre Gol Koval, soit pour gagner l'est de Drustvar depuis la forêt Cramoisie en contournant la Ferté-d'Arom, et donc l'Ordre des Braises. À moins qu'il ne fuyait le yéti, pour peu que le massacre perpétré par ce dernier eût précédé la rencontre.</p>
+      <p>Une enquête conduite parallèlement à Gol Koval par l'inquisiteur Blancmistral et la sœur Everlange y dévoila la présence d'un autre groupe d'adorateurs des drust. Reste à déterminer s'il s'agit d'une cellule alliée à celle de Lameblanche, ou des deux ramifications d'une même secte.</p>
+    </div>
+  </div>
+
+</main><!-- /map-wrapper -->
+
+
+<!-- ══════════════════════════════════════════════
+     LIGHTBOXES
+     « Retour » revient au popup, la croix ferme tout.
+     ══════════════════════════════════════════════ -->
+
+<!-- ══ Aurore Sandrenon ══ -->
+<div class="lightbox" id="lightbox-aurore" role="dialog" aria-modal="true" aria-label="Aurore Sandrenon">
+  <button type="button" class="lightbox-back-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>Retour</button>
+  <button type="button" class="lightbox-close" aria-label="Tout fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
   <div class="lightbox-card">
     <div class="lightbox-inner">
       <div class="lightbox-face lightbox-front">
@@ -1048,21 +872,20 @@
       </div>
       <div class="lightbox-face lightbox-back">
         <h3>Aurore Sandrenon</h3>
-        <hr />
         <p>Le portrait peint sur le médaillon figure Aurore Sandrenon, héritière de la maison éponyme, tandis que le cadre porte quelques caractères de l'alphabet drust. L'inquisiteur Blancmistral en confirme la teneur.</p>
         <p>Issue de la petite noblesse drustvari, la famille Sandrenon plonge ses racines dans les Hauts de Corlain et poursuit un long déclin dont les ressorts demeurent difficiles à démêler. Troisième ou Quatrième Guerre ? Contrecoups du sabbat Malecarde ? Allégeances mal placées ? Alliances regrettables ? Disgrâce ? Plusieurs causes s'entrecroisent vraisemblablement, bien qu'à leur apogée, les Sandrenon pesaient localement à travers leurs membres introduits à la cour Malvoie, dans la magistrature urbaine, et jusqu'aux fonctions de trésorier et d'échevin.</p>
         <p>Trente-deux ans avant l'ouverture de la Porte des Ténèbres, ils auraient écrasé la maison Ostesylve au point d'en effacer toute trace. Sœur Everlange, du clergé de la Sainte Lumière, signale néanmoins qu'une « sœur Ostesylve », sorcière inscrite au sabbat Malecarde, tomba voici quelques années au cimetière Tertrebois. L'hypothèse d'une vengeance tardive mérite donc considération.</p>
         <p>Reste à mentionner, pour la forme, une rumeur prêtant jadis à une certaine Eliana Sandrenon une liaison avec un membre de la maison Malvoie. Sûrement un simple cancan nobiliaire.</p>
       </div>
     </div>
-    <button class="lightbox-flip">Retourner ⤺</button>
+    <button type="button" class="lightbox-flip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>Retourner</button>
   </div>
 </div>
 
-<!-- ══ LIGHTBOX 2 : Yéti adulte ══ -->
-<div class="lightbox" id="lightbox-yeti" data-lightbox-name="yeti">
-  <button class="lightbox-back-btn lightbox-back-trigger" aria-label="Retour">⟵ Retour</button>
-  <button class="lightbox-close" aria-label="Fermer">✕</button>
+<!-- ══ Yéti adulte ══ -->
+<div class="lightbox" id="lightbox-yeti" role="dialog" aria-modal="true" aria-label="Yéti adulte">
+  <button type="button" class="lightbox-back-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>Retour</button>
+  <button type="button" class="lightbox-close" aria-label="Tout fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
   <div class="lightbox-card">
     <div class="lightbox-inner">
       <div class="lightbox-face lightbox-front">
@@ -1070,20 +893,19 @@
       </div>
       <div class="lightbox-face lightbox-back">
         <h3>Yéti adulte</h3>
-        <hr />
         <p>Malgré l'hiver, la bête arborait un pelage résolument sombre. Sur le qui-vive, elle patrouillait d'une caverne à l'autre sans relâche, quoique quelques phases de repos vinssent ponctuer sa marche. Du sang la maculait. Celui des sectateurs de Roncécorche, selon toute vraisemblance, qu'elle aura pour la plupart mis hors d'état de nuire. Tous, cependant ? Ou quelques-uns lui auraient-ils réchappé ?</p>
         <p>Toujours est-il que l'attention portée à sa progéniture évoquait sans ambiguïté un comportement maternel, ce qui incline à y reconnaître une femelle. À moins qu'un mâle yéti ne manifeste de tels instincts ?</p>
         <p>Ses traces sont les seules qui ont été relevées, sans que cela écarte pour autant la présence d'un ou plusieurs congénères (adultes) dans le secteur.</p>
       </div>
     </div>
-    <button class="lightbox-flip">Retourner ⤺</button>
+    <button type="button" class="lightbox-flip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>Retourner</button>
   </div>
 </div>
 
-<!-- ══ LIGHTBOX CORVENAC ══ -->
-<div class="lightbox" id="lightbox-corvenac" data-lightbox-name="corvenac">
-  <button class="lightbox-back-btn lightbox-back-trigger" aria-label="Retour">⟵ Retour</button>
-  <button class="lightbox-close" aria-label="Fermer">✕</button>
+<!-- ══ Maison Corven ══ -->
+<div class="lightbox" id="lightbox-corvenac" role="dialog" aria-modal="true" aria-label="Maison Corven">
+  <button type="button" class="lightbox-back-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>Retour</button>
+  <button type="button" class="lightbox-close" aria-label="Tout fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
   <div class="lightbox-card">
     <div class="lightbox-inner">
       <div class="lightbox-face lightbox-front">
@@ -1091,412 +913,277 @@
       </div>
       <div class="lightbox-face lightbox-back">
         <h3>Maison Corven</h3>
-        <hr />
         <p>Vassale des Malvoie, la maison Corven glisse aujourd'hui vers l'oubli. Sa fondation remonte à un fait d'armes isolé : Halric Corven, chevaucheur de griffon au service du seigneur Arthur Malvoie, sauva celui-ci d'une chute lors d'une entreprise aérienne, alors que le descendant d'Arom montait son griffon Bertram. L'exploit lui valut l'anoblissement et la charge de veiller sur les contreforts méridionaux des Pâtis d'Ormefange. La construction du château de Corvenac, lancée dans la foulée, greva durablement une lignée que l'isolement et une production tout juste suffisante condamnaient à l'asphyxie, tandis que les glissements de terrain fragilisaient l'édifice neuf.</p>
         <p>Halric, d'ailleurs, perdit ses trois fils : Arven, l'aîné, tomba durant la Deuxième Guerre, Valric, le cadet, disparut à Corlain parmi les premières victimes présumées du Sabbat Malecarde, et Beral, le benjamin, dont la naissance avait coûté la vie à leur mère Aveline, fut englouti lors de la Quatrième Guerre sous les salves d'une canonnière de la Horde, probablement celle qui assiégea ensuite la Ferté-d'Arom. Ni Valric ni Beral ne laissèrent de corps.</p>
       </div>
     </div>
-    <button class="lightbox-flip">Retourner ⤺</button>
+    <button type="button" class="lightbox-flip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>Retourner</button>
   </div>
   <!-- Easter egg : son chèvre 1/10 sur le bouton Retourner -->
   <audio id="goatSound" src="chevre.mp3" preload="auto"></audio>
 </div>
 
+
 <script>
+(function () {
+  'use strict';
+
   const wrapper = document.getElementById('mapWrapper');
-  const img     = document.getElementById('mapImg');
+  const mapImg  = document.getElementById('mapImg');
+  const sheetMQ = window.matchMedia('(max-width: 640px)');
+  const MARGIN  = 8;   // marge minimale entre un popup et le bord de la carte
 
-  function positionPopup(hotspot, popup) {
-    const wRect = wrapper.getBoundingClientRect();
-    const hRect = hotspot.getBoundingClientRect();
-    const hLeft = hRect.left - wRect.left + hRect.width / 2;
-    const hTop  = hRect.top  - wRect.top;
-    const hBot  = hRect.bottom - wRect.top;
-    popup.style.visibility = "hidden";
-    popup.style.display    = "block";
-    const popupH = popup.offsetHeight;
-    const popupW = popup.offsetWidth;
-    popup.style.visibility = "";
-    popup.style.display    = "";
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(v, hi));
 
-    // Espace disponible DANS la carte (et non dans la fenêtre)
-    const mapH = wRect.height;
-    const spaceAbove = hTop - 8;             // espace au-dessus du hotspot DANS la carte
-    const spaceBelow = mapH - hBot - 8;      // espace en-dessous du hotspot DANS la carte
-    const spaceLeft  = hRect.left - wRect.left - 8;
+  let openPopup = null;        // popup actuellement ouvert
+  let openTrigger = null;      // marqueur qui l'a ouvert
+  let activeLightbox = null;   // lightbox actuellement ouverte
+  let lightboxOpener = null;   // portrait qui l'a ouverte
 
-    let top, left;
-    popup.classList.remove("arrow-top", "arrow-left", "arrow-right");
-    if (spaceAbove >= popupH) {
-      top  = hTop - popupH - 12;
-      left = hLeft - 28;
-    } else if (spaceBelow >= popupH) {
-      top  = hBot + 12;
-      left = hLeft - 28;
-      popup.classList.add("arrow-top");
-    } else if (spaceLeft >= popupW) {
-      top  = hTop + hRect.height / 2 - popupH + 24;
-      left = hLeft - popupW - 16;
-      popup.classList.add("arrow-left");
-    } else {
-      top  = hTop + hRect.height / 2 - popupH + 24;
-      left = hLeft + 16;
-      popup.classList.add("arrow-right");
+  // ══════════════════════════════════════════════
+  // Proportions de la carte, lues sur l'image elle-même
+  // ══════════════════════════════════════════════
+  function onMapReady() {
+    if (mapImg.naturalWidth && mapImg.naturalHeight) {
+      wrapper.style.setProperty('--map-ratio', (mapImg.naturalWidth / mapImg.naturalHeight).toFixed(5));
+    }
+    wrapper.classList.add('is-ready');
+    repositionPopup();
+  }
+  if (mapImg.complete) onMapReady();
+  else {
+    mapImg.addEventListener('load', onMapReady, { once: true });
+    mapImg.addEventListener('error', onMapReady, { once: true });
+  }
+
+  // ══════════════════════════════════════════════
+  // Popups
+  // ══════════════════════════════════════════════
+  function placePopup(trigger, popup) {
+    popup.classList.remove('side-top', 'side-bottom', 'side-left', 'side-right', 'no-arrow');
+
+    // Petit écran : volet fixé en bas, géré entièrement par le CSS
+    if (sheetMQ.matches) {
+      popup.style.left = popup.style.top = popup.style.maxHeight = '';
+      return;
     }
 
-    // Clamp horizontal (limites de la carte)
-    if (left + popupW > wRect.width - 4) left = wRect.width - popupW - 4;
-    if (left < 4) left = 4;
+    const W = wrapper.clientWidth;
+    const H = wrapper.clientHeight;
+    popup.style.maxHeight = Math.max(160, H - 2 * MARGIN) + 'px';
+    popup.style.left = '0px';
+    popup.style.top  = '0px';
+    const pw = popup.offsetWidth;
+    const ph = popup.offsetHeight;
 
-    // Clamp vertical (limites de la carte, plus la fenêtre)
-    // → ne dépasse jamais en haut ni en bas de la carte
-    if (top + popupH > mapH - 4) top = mapH - popupH - 4;
-    if (top < 4) top = 4;
+    const wr = wrapper.getBoundingClientRect();
+    const disc = trigger.querySelector('.marker-disc') || trigger;
+    const tr = disc.getBoundingClientRect();
+    const cx = tr.left - wr.left + tr.width / 2;
+    const cy = tr.top  - wr.top  + tr.height / 2;
+    const gap = tr.height / 2 + 12;
 
-    let arrowLeft = hLeft - left;
-    if (arrowLeft < 12) arrowLeft = 12;
-    if (arrowLeft > popupW - 12) arrowLeft = popupW - 12;
-    popup.style.setProperty("--arrow-left", arrowLeft + "px");
-    popup.style.left = left + "px";
-    popup.style.top  = top  + "px";
-  }
-
-  // ── Lightbox (multi) ──
-  const lightboxes = document.querySelectorAll('.lightbox');
-  let activeLightbox = null;
-
-  // Mesure la hauteur "naturelle" d'une face .lightbox-front ou .lightbox-back
-  function measureFaceHeight(face) {
-    // On retire temporairement le positionnement absolu pour mesurer la hauteur naturelle
-    const original = {
-      position: face.style.position,
-      visibility: face.style.visibility,
-      transform: face.style.transform
+    // Place disponible de chaque côté du marqueur, dans les limites de la carte
+    const room = {
+      top:    cy - gap - MARGIN,
+      bottom: H - cy - gap - MARGIN,
+      right:  W - cx - gap - MARGIN,
+      left:   cx - gap - MARGIN
     };
-    face.style.position = 'relative';
-    face.style.visibility = 'hidden';
-    face.style.transform = 'none';
-    const h = face.offsetHeight;
-    face.style.position = original.position;
-    face.style.visibility = original.visibility;
-    face.style.transform = original.transform;
-    return h;
+    const need = { top: ph, bottom: ph, right: pw, left: pw };
+    const order = ['top', 'bottom', 'right', 'left'];
+
+    let side = order.find(s => room[s] >= need[s]);
+    const fits = Boolean(side);
+    if (!side) side = order.reduce((a, b) => (room[b] / need[b] > room[a] / need[a] ? b : a));
+
+    let left, top;
+    if (side === 'top')    { top = cy - gap - ph; left = cx - pw / 2; }
+    if (side === 'bottom') { top = cy + gap;      left = cx - pw / 2; }
+    if (side === 'right')  { left = cx + gap;      top = cy - ph / 2; }
+    if (side === 'left')   { left = cx - gap - pw; top = cy - ph / 2; }
+
+    left = clamp(left, MARGIN, W - pw - MARGIN);
+    top  = clamp(top,  MARGIN, H - ph - MARGIN);
+
+    const vertical = side === 'top' || side === 'bottom';
+    const along = vertical ? cx - left : cy - top;
+    const len   = vertical ? pw : ph;
+    popup.style.setProperty('--arrow', clamp(along, 18, len - 18) + 'px');
+    popup.classList.add('side-' + side);
+    if (!fits || along < 14 || along > len - 14) popup.classList.add('no-arrow');
+
+    popup.style.left = Math.round(left) + 'px';
+    popup.style.top  = Math.round(top) + 'px';
   }
 
-  // Ajuste la hauteur de la card selon la face affichée (avec animation)
-  function syncCardHeight(lb) {
-    const card  = lb.querySelector('.lightbox-card');
-    const front = lb.querySelector('.lightbox-front');
-    const back  = lb.querySelector('.lightbox-back');
-    const showingBack = card.classList.contains('flipped');
-    const targetFace = showingBack ? back : front;
-    const h = measureFaceHeight(targetFace);
-    card.style.height = h + 'px';
+  function repositionPopup() {
+    if (openPopup && openTrigger) placePopup(openTrigger, openPopup);
   }
 
-  function openLightbox(id) {
-    const lb = document.getElementById(id);
-    if (!lb) return;
-    activeLightbox = lb;
-    const card = lb.querySelector('.lightbox-card');
-    const flip = lb.querySelector('.lightbox-flip');
-    card.classList.remove('flipped'); // toujours rouvrir sur le recto
-    flip.textContent = 'Retourner ⤺';
-    lb.classList.add('active');
-    // Une fois la lightbox visible, on peut mesurer et fixer la hauteur
-    // Petit délai pour laisser le navigateur appliquer le display: flex
-    requestAnimationFrame(() => {
-      // Désactive la transition pour le réglage initial (pas d'anim à l'ouverture)
-      card.style.transition = 'none';
-      syncCardHeight(lb);
-      // Force un reflow puis réactive la transition
-      void card.offsetHeight;
-      card.style.transition = '';
-    });
+  function closePopup(restoreFocus) {
+    if (!openPopup) return;
+    openPopup.classList.remove('active');
+    openTrigger.setAttribute('aria-expanded', 'false');
+    if (restoreFocus) openTrigger.focus({ preventScroll: true });
+    openPopup = openTrigger = null;
   }
 
-  function closeLightbox(lb) {
-    if (!lb) return;
-    lb.classList.remove('active');
-    activeLightbox = null;
-    // Reset au recto après l'animation de fermeture
-    setTimeout(() => {
-      const card = lb.querySelector('.lightbox-card');
-      const flip = lb.querySelector('.lightbox-flip');
-      card.classList.remove('flipped');
-      flip.textContent = 'Retourner ⤺';
-      card.style.height = ''; // reset hauteur
-    }, 200);
+  function showPopup(trigger) {
+    const popup = document.getElementById(trigger.dataset.popup);
+    if (!popup) return;
+    if (openPopup === popup) { closePopup(false); return; }
+    closePopup(false);
+
+    popup.classList.add('active');
+    trigger.setAttribute('aria-expanded', 'true');
+    trigger.classList.add('is-seen');
+    openPopup = popup;
+    openTrigger = trigger;
+
+    placePopup(trigger, popup);
+    const body = popup.querySelector('.popup-body');
+    if (body) body.scrollTop = 0;
+    popup.focus({ preventScroll: true });
   }
 
-  // Pour chaque lightbox, on attache ses propres listeners
-  lightboxes.forEach(lb => {
-    const card = lb.querySelector('.lightbox-card');
-    const flip = lb.querySelector('.lightbox-flip');
-    const backBtn = lb.querySelector('.lightbox-back-trigger');
-
-    // Bouton flip
-    flip.addEventListener('click', e => {
+  wrapper.querySelectorAll('.marker[data-popup]').forEach(trigger => {
+    trigger.addEventListener('click', e => {
       e.stopPropagation();
-      card.classList.toggle('flipped');
-      flip.textContent = card.classList.contains('flipped')
-        ? 'Retourner ⤻'
-        : 'Retourner ⤺';
-      syncCardHeight(lb); // anime la hauteur en même temps que la rotation
-    });
-
-    // Bouton retour
-    backBtn.addEventListener('click', e => {
-      e.stopPropagation();
-      closeLightbox(lb);
-    });
-
-    // Empêcher la fermeture quand on clique dans la carte
-    card.addEventListener('click', e => e.stopPropagation());
-
-    // Clic sur le fond noir ou la croix → ferme
-    lb.addEventListener('click', e => {
-      if (e.target === lb || e.target.classList.contains('lightbox-close')) {
-        e.stopPropagation();
-        closeLightbox(lb);
-      }
+      showPopup(trigger);
     });
   });
 
-  // Clic sur un portrait dans un popup → ouvre la bonne lightbox via data-lightbox
-  // (le wrapper porte data-lightbox, le clic peut venir de l'image ou du coin replié)
+  wrapper.querySelectorAll('.popup').forEach(popup => {
+    // Un clic dans le popup (lecture, sélection de texte) ne le ferme pas
+    popup.addEventListener('click', e => e.stopPropagation());
+    popup.querySelector('.popup-close').addEventListener('click', () => closePopup(true));
+  });
+
+  // Clic ailleurs sur la page → ferme le popup
+  document.addEventListener('click', () => closePopup(false));
+
+  // Les images des portraits peuvent changer la hauteur du popup une fois chargées
+  wrapper.querySelectorAll('.popup img').forEach(img => {
+    if (!img.complete) img.addEventListener('load', repositionPopup);
+  });
+
+  // ══════════════════════════════════════════════
+  // Lightboxes (recto / verso)
+  // ══════════════════════════════════════════════
+  function syncCardHeight(lb, animate) {
+    const card  = lb.querySelector('.lightbox-card');
+    const inner = lb.querySelector('.lightbox-inner');
+    const face  = lb.querySelector(card.classList.contains('flipped') ? '.lightbox-back' : '.lightbox-front');
+    if (!animate) inner.style.transition = 'none';
+    inner.style.height = face.offsetHeight + 'px';
+    if (!animate) {
+      void inner.offsetHeight; // applique la hauteur avant de réactiver la transition
+      inner.style.transition = '';
+    }
+  }
+
+  function openLightbox(id, opener) {
+    const lb = document.getElementById(id);
+    if (!lb) return;
+    const card = lb.querySelector('.lightbox-card');
+    card.classList.remove('flipped');   // toujours rouvrir sur le recto
+    lb.classList.add('active');
+    lb.scrollTop = 0;
+    document.documentElement.classList.add('lb-open');
+    activeLightbox = lb;
+    lightboxOpener = opener || null;
+
+    syncCardHeight(lb, false);
+    const img = lb.querySelector('.lightbox-front img');
+    if (img && !img.complete) img.addEventListener('load', () => syncCardHeight(lb, false), { once: true });
+
+    lb.querySelector('.lightbox-flip').focus({ preventScroll: true });
+  }
+
+  function closeLightbox(alsoClosePopup) {
+    const lb = activeLightbox;
+    if (!lb) return;
+    lb.classList.remove('active');
+    document.documentElement.classList.remove('lb-open');
+    activeLightbox = null;
+
+    lb.querySelector('.lightbox-card').classList.remove('flipped');
+    lb.querySelector('.lightbox-inner').style.height = '';
+
+    if (alsoClosePopup) closePopup(true);
+    else if (lightboxOpener) lightboxOpener.focus({ preventScroll: true });
+    lightboxOpener = null;
+  }
+
+  document.querySelectorAll('.lightbox').forEach(lb => {
+    const card = lb.querySelector('.lightbox-card');
+
+    lb.querySelector('.lightbox-flip').addEventListener('click', () => {
+      card.classList.toggle('flipped');
+      syncCardHeight(lb, true);
+    });
+    lb.querySelector('.lightbox-back-btn').addEventListener('click', () => closeLightbox(false));
+    lb.querySelector('.lightbox-close').addEventListener('click', () => closeLightbox(true));
+
+    lb.addEventListener('click', e => {
+      e.stopPropagation();                       // ne pas fermer le popup derrière
+      if (e.target === lb) closeLightbox(false); // clic sur le fond sombre → retour au popup
+    });
+  });
+
   wrapper.querySelectorAll('.portrait-wrapper').forEach(pw => {
     pw.addEventListener('click', e => {
       e.stopPropagation();
-      const target = pw.dataset.lightbox;
-      if (target) {
-        // Si l'image n'est pas encore chargée, attendre pour avoir une mesure correcte
-        const lb = document.getElementById(target);
-        const lbImg = lb && lb.querySelector('.lightbox-front img');
-        if (lbImg && !lbImg.complete) {
-          lbImg.addEventListener('load', () => openLightbox(target), { once: true });
-        }
-        openLightbox(target);
-      }
+      openLightbox(pw.dataset.lightbox, pw);
     });
   });
 
-  // Recalcul si la fenêtre change de taille (responsive)
-  window.addEventListener('resize', () => {
-    if (activeLightbox) {
-      const card = activeLightbox.querySelector('.lightbox-card');
-      card.style.transition = 'none';
-      syncCardHeight(activeLightbox);
-      void card.offsetHeight;
-      card.style.transition = '';
-    }
-  });
-
-  // Escape → ferme la lightbox active
+  // ══════════════════════════════════════════════
+  // Clavier : Échap ferme la lightbox, puis le popup
+  // ══════════════════════════════════════════════
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && activeLightbox) {
-      closeLightbox(activeLightbox);
-    }
-  });
-
-  // Clic sur un hotspot ou le titre cliquable → ouvre/ferme le popup
-  wrapper.querySelectorAll('.hotspot, .map-title').forEach(hotspot => {
-    hotspot.addEventListener('click', e => {
-      e.stopPropagation();
-      const targetId = hotspot.dataset.popup;
-      const popup    = document.getElementById(targetId);
-
-      const wasActive = popup.classList.contains('active');
-
-      // Ferme tous les popups
-      wrapper.querySelectorAll('.popup').forEach(p => p.classList.remove('active'));
-
-      if (!wasActive) {
-        popup.classList.add('active');
-        positionPopup(hotspot, popup);
-      }
-    });
-  });
-
-  // Bouton fermer dans le popup
-  wrapper.querySelectorAll('.popup-close').forEach(btn => {
-    btn.addEventListener('click', e => {
-      e.stopPropagation();
-      btn.closest('.popup').classList.remove('active');
-    });
-  });
-
-  // Clic ailleurs → ferme tout
-  document.addEventListener('click', () => {
-    wrapper.querySelectorAll('.popup').forEach(p => p.classList.remove('active'));
-  });
-
-  // Repositionne si fenêtre redimensionnée
-  window.addEventListener('resize', () => {
-    wrapper.querySelectorAll('.popup.active').forEach(popup => {
-      const id      = popup.id;
-      const hotspot = wrapper.querySelector(`[data-popup="${id}"]`);
-      if (hotspot) positionPopup(hotspot, popup);
-    });
+    if (e.key !== 'Escape') return;
+    if (activeLightbox) closeLightbox(false);
+    else closePopup(true);
   });
 
   // ══════════════════════════════════════════════
-  // Musique d'ambiance — hotspot note + lecteur
+  // Redimensionnement (fenêtre, zoom du navigateur, rotation du téléphone)
   // ══════════════════════════════════════════════
-  (function() {
-    const hotspot  = document.getElementById('musicHotspot');
-    const player   = document.getElementById('audioPlayer');
-    const playBtn  = document.getElementById('audioPlayBtn');
-    const volSlider= document.getElementById('audioVolume');
-    const closeBtn = document.getElementById('audioClose');
-    const audio    = document.getElementById('ambientAudio');
-
-    const STORAGE_VOL    = 'lameblanche.music.volume';
-    const STORAGE_OPEN   = 'lameblanche.music.open';
-    const STORAGE_PLAY   = 'lameblanche.music.playing';
-    const FADE_DURATION  = 900; // ms
-
-    // Restaurer le volume sauvegardé, sinon 35%
-    const savedVol = parseFloat(localStorage.getItem(STORAGE_VOL));
-    const initVol  = Number.isFinite(savedVol) ? savedVol : 0.35;
-    volSlider.value = Math.round(initVol * 100);
-    updateSliderFill();
-    audio.volume = 0; // démarre toujours à 0, on fade in à la lecture
-
-    function updateSliderFill() {
-      volSlider.style.setProperty('--vol', volSlider.value + '%');
-    }
-
-    let fadeTimer = null;
-    function fadeTo(targetVol, onDone) {
-      if (fadeTimer) clearInterval(fadeTimer);
-      const startVol = audio.volume;
-      const startTime = performance.now();
-      fadeTimer = setInterval(() => {
-        const t = Math.min(1, (performance.now() - startTime) / FADE_DURATION);
-        audio.volume = startVol + (targetVol - startVol) * t;
-        if (t >= 1) {
-          clearInterval(fadeTimer);
-          fadeTimer = null;
-          if (onDone) onDone();
-        }
-      }, 30);
-    }
-
-    function targetVolume() {
-      return parseInt(volSlider.value, 10) / 100;
-    }
-
-    function openPlayer() {
-      player.classList.add('open');
-      localStorage.setItem(STORAGE_OPEN, 'true');
-    }
-    function closePlayer() {
-      player.classList.remove('open');
-      localStorage.setItem(STORAGE_OPEN, 'false');
-    }
-
-    function play() {
-      audio.play().then(() => {
-        hotspot.classList.add('playing');
-        playBtn.classList.add('playing');
-        playBtn.setAttribute('aria-label', 'Pause');
-        fadeTo(targetVolume());
-        localStorage.setItem(STORAGE_PLAY, 'true');
-      }).catch(() => {
-        // Lecture refusée (rare après un vrai clic) : on reste discret
-      });
-    }
-
-    function pause() {
-      fadeTo(0, () => {
-        audio.pause();
-        hotspot.classList.remove('playing');
-        playBtn.classList.remove('playing');
-        playBtn.setAttribute('aria-label', 'Lecture');
-        localStorage.setItem(STORAGE_PLAY, 'false');
-      });
-    }
-
-    // ── Clic sur la note dans la carte ──
-    // Premier clic : ouvre le lecteur ET démarre la musique
-    // Clic suivant : bascule l'ouverture/fermeture du lecteur (sans toucher au son)
-    let firstClick = true;
-    hotspot.addEventListener('click', e => {
-      e.stopPropagation();
-      if (firstClick && audio.paused) {
-        firstClick = false;
-        openPlayer();
-        play();
-      } else {
-        // Toggle l'affichage du lecteur
-        if (player.classList.contains('open')) closePlayer();
-        else openPlayer();
-      }
+  let resizeQueued = false;
+  function onResize() {
+    if (resizeQueued) return;
+    resizeQueued = true;
+    requestAnimationFrame(() => {
+      resizeQueued = false;
+      repositionPopup();
+      if (activeLightbox) syncCardHeight(activeLightbox, false);
     });
-    // Accessibilité : touche Entrée / Espace sur le hotspot
-    hotspot.addEventListener('keydown', e => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        hotspot.click();
-      }
-    });
+  }
+  window.addEventListener('resize', onResize);
+  if ('ResizeObserver' in window) new ResizeObserver(onResize).observe(wrapper);
+  if (sheetMQ.addEventListener) sheetMQ.addEventListener('change', onResize);
+  else if (sheetMQ.addListener) sheetMQ.addListener(onResize); // anciens Safari
 
-    // ── Bouton lecture/pause du lecteur ──
-    playBtn.addEventListener('click', e => {
-      e.stopPropagation();
-      if (audio.paused) play();
-      else pause();
-    });
-
-    // ── Slider de volume (ajuste en direct, sans fade) ──
-    volSlider.addEventListener('input', () => {
-      updateSliderFill();
-      const v = targetVolume();
-      localStorage.setItem(STORAGE_VOL, v);
-      // Si la musique joue : ajuste tout de suite (le fade en cours est annulé)
-      if (!audio.paused) {
-        if (fadeTimer) { clearInterval(fadeTimer); fadeTimer = null; }
-        audio.volume = v;
-      }
-    });
-
-    // ── Bouton fermer du lecteur ──
-    closeBtn.addEventListener('click', e => {
-      e.stopPropagation();
-      closePlayer();
-    });
-
-    // ── Empêcher que les clics dans le lecteur ferment les popups ──
-    player.addEventListener('click', e => e.stopPropagation());
-
-    // ── Restauration de l'état au chargement ──
-    // Si le lecteur était ouvert : on le rouvre (sans démarrer la musique :
-    // les navigateurs imposent une interaction utilisateur)
-    if (localStorage.getItem(STORAGE_OPEN) === 'true') {
-      openPlayer();
-      firstClick = false; // évite de redémarrer la musique au prochain clic
-    }
-  })();
+  // Les polices changent la hauteur des textes une fois chargées
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(onResize);
 
   // ══════════════════════════════════════════════
   // Easter egg : 1 chance sur 10 de bêler en retournant la fiche Corven
   // ══════════════════════════════════════════════
-  (function() {
-    const corvenLightbox = document.getElementById('lightbox-corvenac');
-    const goat = document.getElementById('goatSound');
-    if (!corvenLightbox || !goat) return;
-    const flipBtn = corvenLightbox.querySelector('.lightbox-flip');
-    if (!flipBtn) return;
-    flipBtn.addEventListener('click', () => {
+  const goat = document.getElementById('goatSound');
+  const corvenFlip = document.querySelector('#lightbox-corvenac .lightbox-flip');
+  if (goat && corvenFlip) {
+    corvenFlip.addEventListener('click', () => {
       if (Math.random() < 0.10) {
-        // Reset au début pour que ça marche même si l'easter egg vient de jouer
         goat.currentTime = 0;
         goat.volume = 0.7;
         goat.play().catch(() => { /* ignoré silencieusement */ });
       }
     });
-  })();
+  }
+})();
 </script>
 </body>
 </html>

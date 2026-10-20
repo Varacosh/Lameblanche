@@ -380,28 +380,32 @@
       z-index: 20;
       display: flex;
       flex-direction: column;
-      border-radius: 15px;
-      background: radial-gradient(circle at 35% 20%, #5a3c1d 0%, var(--ink) 50%, var(--ink-deep) 100%);
-      box-shadow:
-        inset 0 0 0 1.5px rgba(245, 240, 224, 0.9),
-        0 0 0 1px var(--ink-deep),
-        0 2px 6px rgba(0, 0, 0, 0.45);
+      border-radius: 13px;
+      /* Discrets : papier translucide et filet d'encre, ils s'affirment au survol */
+      background: rgba(245, 240, 224, 0.5);
+      box-shadow: 0 0 0 1px rgba(59, 37, 16, 0.25);
       opacity: 0;
-      transition: opacity 0.5s ease;
+      transition: opacity 0.5s ease, background 0.2s ease, box-shadow 0.2s ease;
     }
-    .map-wrapper.is-ready .zoom { opacity: 1; }
+    .map-wrapper.is-ready .zoom { opacity: 0.8; }
+    .map-wrapper.is-ready .zoom:hover,
+    .map-wrapper.is-ready .zoom:focus-within {
+      opacity: 1;
+      background: rgba(245, 240, 224, 0.88);
+      box-shadow: 0 0 0 1px rgba(59, 37, 16, 0.45), 0 2px 6px rgba(0, 0, 0, 0.18);
+    }
 
     .zoom-btn {
       position: relative;
-      width: 30px;
-      height: 30px;
+      width: 26px;
+      height: 26px;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 0;
       border: 0;
       background: none;
-      color: var(--parchment);
+      color: var(--ink);
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
     }
@@ -409,16 +413,16 @@
       content: '';
       position: absolute;
       top: 0;
-      left: 8px;
-      right: 8px;
+      left: 7px;
+      right: 7px;
       height: 1px;
-      background: rgba(245, 240, 224, 0.28);
+      background: rgba(59, 37, 16, 0.2);
     }
-    .zoom-btn svg { width: 14px; height: 14px; transition: transform 0.15s ease; }
+    .zoom-btn svg { width: 12px; height: 12px; transition: transform 0.15s ease; }
     .zoom-btn:hover:not(:disabled) svg { transform: scale(1.18); }
-    .zoom-btn:disabled { color: rgba(245, 240, 224, 0.35); cursor: default; }
+    .zoom-btn:disabled { color: rgba(59, 37, 16, 0.28); cursor: default; }
     .zoom-btn:focus { outline: none; }
-    .zoom-btn:focus-visible { outline: 2px solid var(--parchment); outline-offset: 2px; border-radius: 50%; }
+    .zoom-btn:focus-visible { outline: 2px solid var(--leather); outline-offset: 1px; border-radius: 50%; }
 
     /* Nom du bouton au survol, à gauche (même style que les noms de lieux) */
     .zoom-label {
@@ -457,6 +461,7 @@
     @media (max-width: 640px) {
       .zoom { top: 8px; right: 8px; border-radius: 14px; }
       .zoom-btn { width: 28px; height: 28px; }
+      .zoom-btn svg { width: 13px; height: 13px; }
     }
 
     /* ══════════════════════════════════════════════
@@ -495,7 +500,7 @@
       align-items: center;
       gap: 10px;
       margin: 0 16px;
-      padding: 13px 100px 9px 0;   /* place pour A− A+ et la croix */
+      padding: 13px 130px 9px 0;   /* place pour « taille normale », A−, A+ et la croix */
       border-bottom: 1px solid var(--rule);
     }
 
@@ -924,8 +929,14 @@
       cursor: pointer;
       transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
     }
-    .textsize-btn.is-down { font-size: 12.5px; }
-    .textsize-btn.is-up   { font-size: 17px; }
+    .textsize-btn.is-down  { font-size: 12.5px; }
+    .textsize-btn.is-up    { font-size: 17px; }
+    .textsize-btn.is-reset { font-size: 14.5px; }
+    .textsize-btn.is-reset svg { width: 9px; height: 9px; margin-left: 1px; transform: translateY(-4px); }
+    /* « Taille normale » n'apparaît que lorsque le texte a été agrandi.
+       Sa place reste réservée, pour que A− et A+ ne bougent jamais sous le curseur. */
+    .textsize-btn.is-reset.is-idle { visibility: hidden; opacity: 0; }
+    .textsize-btn.is-reset { transition: opacity 0.2s ease, background 0.15s ease, color 0.15s ease, border-color 0.15s ease; }
     .textsize-btn sup {
       font-family: Georgia, 'Times New Roman', serif;
       font-size: 10px;
@@ -958,8 +969,9 @@
       background: rgba(12, 8, 3, 0.6);
       color: var(--parchment);
     }
-    .lightbox .textsize-btn.is-down { font-size: 13px; }
-    .lightbox .textsize-btn.is-up   { font-size: 18px; }
+    .lightbox .textsize-btn.is-down  { font-size: 13px; }
+    .lightbox .textsize-btn.is-up    { font-size: 18px; }
+    .lightbox .textsize-btn.is-reset { font-size: 15.5px; }
     .lightbox .textsize-btn:hover:not(:disabled) { background: rgba(12, 8, 3, 0.6); color: var(--rule); border-color: var(--rule); }
     .lightbox .textsize-btn:focus-visible { outline-color: var(--parchment); outline-offset: 3px; }
     /* Sur le recto (portrait), le réglage ne sert à rien : on l'estompe */
@@ -2006,9 +2018,11 @@
 
   function applyTextScale() {
     document.documentElement.style.setProperty('--text-scale', TEXT_LEVELS[textLevel]);
-    textButtons.forEach(({ down, up }) => {
+    textButtons.forEach(({ reset, down, up }) => {
       down.disabled = textLevel === 0;
       up.disabled = textLevel === TEXT_LEVELS.length - 1;
+      reset.classList.toggle('is-idle', textLevel === 0);
+      reset.tabIndex = textLevel === 0 ? -1 : 0;
     });
     repositionPopup();
     if (activeLightbox) syncCardHeight(activeLightbox);
@@ -2026,13 +2040,21 @@
     group.setAttribute('role', 'group');
     group.setAttribute('aria-label', 'Taille du texte');
     group.innerHTML =
+      '<button type="button" class="textsize-btn is-reset is-idle" title="Taille normale" aria-label="Revenir à la taille de texte normale" tabindex="-1">A' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.6-5.9L4 8.5"/><path d="M4 3.5v5h5"/></svg></button>' +
       '<button type="button" class="textsize-btn is-down" title="Réduire le texte" aria-label="Réduire le texte">A<sup>−</sup></button>' +
       '<button type="button" class="textsize-btn is-up" title="Agrandir le texte" aria-label="Agrandir le texte">A<sup>+</sup></button>';
+    const reset = group.querySelector('.is-reset');
     const down = group.querySelector('.is-down');
     const up = group.querySelector('.is-up');
+    reset.addEventListener('click', e => {
+      e.stopPropagation();
+      changeTextSize(-TEXT_LEVELS.length);
+      up.focus({ preventScroll: true });   // le bouton « taille normale » disparaît : le focus passe à A+
+    });
     down.addEventListener('click', e => { e.stopPropagation(); changeTextSize(-1); });
     up.addEventListener('click', e => { e.stopPropagation(); changeTextSize(1); });
-    textButtons.push({ down, up });
+    textButtons.push({ reset, down, up });
     return group;
   }
 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lameblanche - Carte Interactive</title>
+  <title>Lame Blanche — Carte Interactive</title>
 
   <!-- Polices chargées en <link> (plus rapide et plus fiable qu'un @import dans le CSS) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -133,11 +133,16 @@
         0 4px 10px rgba(0, 0, 0, 0.4);
     }
     /* Bords de la carte légèrement assombris, comme un papier ancien */
+    /* (dégradés plutôt qu'une ombre floue : même effet, bien moins coûteux à afficher) */
     .map-wrapper::after {
       content: '';
       position: absolute;
       inset: 0;
-      box-shadow: inset 0 0 40px rgba(60, 40, 10, 0.28);
+      background:
+        linear-gradient(to right,  rgba(60, 40, 10, 0.22), rgba(60, 40, 10, 0) 44px),
+        linear-gradient(to left,   rgba(60, 40, 10, 0.22), rgba(60, 40, 10, 0) 44px),
+        linear-gradient(to bottom, rgba(60, 40, 10, 0.22), rgba(60, 40, 10, 0) 44px),
+        linear-gradient(to top,    rgba(60, 40, 10, 0.22), rgba(60, 40, 10, 0) 44px);
       pointer-events: none;
     }
 
@@ -239,19 +244,29 @@
     }
 
     /* Onde d'encre : uniquement sur les lieux pas encore consultés */
+    /* Anneau aux bords doux (un trait net semble avancer par à-coups),
+       qui part de derrière le médaillon. will-change confie l'animation
+       à la carte graphique : elle reste fluide sans redessiner la carte. */
     .marker:not(.is-seen) .marker-disc::after {
       content: '';
       position: absolute;
-      inset: -3px;
+      inset: -8px;
+      z-index: -1;
       border-radius: 50%;
-      border: 2px solid rgba(42, 25, 10, 0.55);
-      animation: inkRipple 3.2s ease-out infinite;
+      background: radial-gradient(circle closest-side,
+                  rgba(42, 25, 10, 0)    56%,
+                  rgba(42, 25, 10, 0.5)  74%,
+                  rgba(42, 25, 10, 0)    100%);
+      opacity: 0;
+      will-change: transform, opacity;
+      animation: inkRipple 3.6s cubic-bezier(0.2, 0.6, 0.3, 1) infinite;
       pointer-events: none;
     }
     @keyframes inkRipple {
-      0%   { transform: scale(0.9); opacity: 0.9; }
-      70%  { transform: scale(1.7); opacity: 0;   }
-      100% { transform: scale(1.7); opacity: 0;   }
+      0%   { transform: scale(0.8);  opacity: 0;   }
+      6%   { transform: scale(0.88); opacity: 0.9; }
+      38%  { transform: scale(1.6);  opacity: 0;   }
+      100% { transform: scale(1.6);  opacity: 0;   }
     }
 
     /* Survol / focus clavier */
@@ -806,16 +821,16 @@
        ══════════════════════════════════════════════ -->
 
   <!-- ══ Traverse de Lameblanche ══ -->
-  <div class="popup" id="popup-traverse" role="dialog" aria-labelledby="t-traverse" tabindex="-1" style="--w: 470px; --c: #301908;">
+  <div class="popup" id="popup-traverse" role="dialog" aria-labelledby="t-traverse" tabindex="-1" style="--w: 540px; --c: #301908;">
     <button type="button" class="popup-close" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     <div class="popup-header">
       <span class="popup-gem" aria-hidden="true"></span>
       <h2 class="popup-title" id="t-traverse">Traverse de Lameblanche</h2>
     </div>
     <div class="popup-body">
-      <p>Lieu dont rendent compte la carte jointe et les notes qui s'y rapportent.</p>
-      <p>L'épaulement glaciaire se partage entre deux masses : un petit glacier enserré entre le refuge abandonné et le sentier menant à Gol Koval, et un second, plus imposant, qui enveloppe la caverne inexplorée du yéti. La fonte de ce dernier alimente un lac où affleure une petite île portant des ruines drust et trois stèles, dont l'une gît renversée ; les eaux s'en écoulent ensuite en cascade jusqu'aux pâtis d'Ormefange, au sud. Plusieurs cadavres, en majorité masculins, jonchent le secteur, accoutrés à la manière dont on se représente communément les géants qui peuplaient autrefois ces hauteurs : masques, bois de cerf, ossements et fourrures. Les blessures désignent un yéti adulte pour responsable du carnage, la traverse de Lameblanche paraissant constituer son territoire.</p>
-      <p>La découverte du site fit suite à l'observation d'une silhouette au sommet du glacier de Gol Koval : sans doute un sectaire de Roncécorche fuyant le massacre, ou cherchant une voie de descente avant de tomber, plus tard, sous les coups de la bête. La chronologie demeure incertaine. Les empreintes relevées rattachent toutefois le groupe à la trouée des Hauts-Laments, à l'est, plutôt qu'à Corvenac au sud ; encore que l'on ne saurait exclure que quelques rescapés en eussent effectué la descente.</p>
+      <p>La traverse de Lameblanche, que documentent la carte jointe et les notes qui l’accompagnent, forme un contrefort que se partagent deux glaciers. Le plus modeste s’étend à l’est d’un refuge abandonné&nbsp;; l’autre, bien plus imposant, surplombe la caverne d’un yéti, que je n’ai pas encore explorée, et nourrit de sa fonte un lac. Un îlot y affleure, sur lequel subsistent des ruines drust, dont trois stèles, l’une d’elles renversée. Le trop-plein s’en échappe ensuite par une cascade dont on entend de loin le fracas, et rejoint ainsi les Pâtis d’Ormefange, au sud.</p>
+      <p>Il y a un an environ, plusieurs cadavres jonchaient le secteur, masculins pour la plupart, sinon tous. Leur accoutrement reprenait l’idée que l’on se fait communément des drust qui peuplaient jadis Kul Tiras&nbsp;: masques, bois de cerf, ossements, fourrures et tatouages tribaux. L’ensemble tenait presque du déguisement de carnaval. Un yéti adulte les aurait mis en pièces, la traverse paraissant constituer son domaine. La bête dédaigna pourtant les corps, qu’elle abandonna dans la neige. Voulait-elle adresser un avertissement, ou marquer son territoire&nbsp;? À moins que la chair humaine ne lui déplaise.</p>
+      <p>Le site fut découvert après qu’on eut aperçu une silhouette au sommet du glacier de Gol Koval. Il s’agissait sans doute d’un sectateur de Roncécorche, soit qu’il fuît le massacre, soit qu’il cherchât une voie de descente avant de succomber plus tard sous les coups de la bête&nbsp;; la chronologie demeure incertaine. Les empreintes relevées rattachent en revanche le groupe à la Trouée des Hauts-Laments, à l’ouest, plutôt qu’à Corvenac, au sud. Certes, on ne saurait exclure que quelques rescapés y soient descendus, mais il reste qu’en principe ces fanatiques venaient d’ailleurs, sans que cela leur interdise d’y exercer quelque influence.</p>
     </div>
   </div>
 

@@ -654,6 +654,7 @@
     #lightbox-yeti .lightbox-front img { width: 100%; }
     /* Fiche au long texte : un peu plus large, pour qu'elle reste moins haute */
     #lightbox-aurore .lightbox-card { width: min(560px, 100%); }
+    #lightbox-corvenac .lightbox-card { width: min(500px, 100%); }
 
     .lightbox-back {
       transform: rotateY(180deg);
@@ -893,7 +894,7 @@
   </div>
 
   <!-- ══ Intérieur du glacier ══ -->
-  <div class="popup" id="popup-yeti" role="dialog" aria-labelledby="t-yeti" tabindex="-1" style="--w: 430px; --c: #a63b2e;">
+  <div class="popup" id="popup-yeti" role="dialog" aria-labelledby="t-yeti" tabindex="-1" style="--w: 500px; --c: #a63b2e;">
     <button type="button" class="popup-close" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     <div class="popup-header">
       <span class="popup-gem" aria-hidden="true"></span>
@@ -903,9 +904,10 @@
       <button type="button" class="portrait-wrapper" data-lightbox="lightbox-yeti" aria-label="Agrandir le portrait du yéti adulte">
         <img src="yetiadulte.png" alt="" />
       </button>
-      <p>Le glacier s'ouvre sur une cavité inexplorée, trop périlleuse pour qu'on s'y engage seul, car il apparaît que le yéti adulte y entrepose ses proies. La glace lui tient probablement lieu de chambre-froide pour les préserver&nbsp;? L'hypothèse, si elle se vérifie, trahirait chez la bête une prévoyance remarquable, bien que cela n'épuise sans doute pas le mystère du lieu.</p>
-      <p>Le glacier de Gol Koval, plus en aval, dissimule des ruines drust en son cœur. Les anciens occupants y cherchaient-ils refuge, ou cherchaient-ils à soustraire quelque chose au regard des hommes&nbsp;? Cette interrogation explique vraisemblablement la tentative des cultistes de Roncécorche, qui voulurent forcer celui-ci et succombèrent sous les coups du yéti. Lequel dédaigna leurs corps, signe que sa férocité ne relevait pas de la faim, mais bien de la protection de son territoire.</p>
-      <p>Quelque chose, dans cette cavité, attire donc, peut-être, les adorateurs du roi-sorcier. La sagesse commanderait de laisser dormir ce secret, mais puisqu'il a éveillé des convoitises autant le percer. Qui ne connaît ni son ennemi ni lui-même perdra cent batailles. Reste à découvrir ce qui dort sous la glace en épargnant le yéti, gardien involontaire des intérêts de Drustvar.</p>
+      <p>Le glacier de Lameblanche s’ouvre sur une cavité inexplorée, dont l’entrée laisse filtrer une lueur bleutée. Le yéti adulte semble y entreposer ses proies, ce qui rend l’endroit trop périlleux pour qu’on s’y aventure seul. La glace lui tiendrait lieu de chambre froide, et si l’hypothèse se vérifiait, il faudrait reconnaître à la bête une remarquable prévoyance&nbsp;!</p>
+      <p>Enfin… Plus à l’est, le glacier de Gol Koval abrite des ruines drust. Leurs anciens occupants s’y réfugièrent-ils lorsque nos ancêtres les combattirent, ou y cachèrent-ils quelque chose&nbsp;? Dans un cas comme dans l’autre, je soupçonne celui de Lameblanche de receler un secret.</p>
+      <p>Ainsi s’expliquerait la tentative des sectateurs de Roncécorche, qui voulurent forcer le glacier et succombèrent sous les coups du yéti. La bête dédaigna d’ailleurs leurs dépouilles. Sa férocité ne procédait donc pas, selon moi, de la faim, mais bien de la défense de son territoire.</p>
+      <p>Quelque chose, dans cette cavité, attire peut-être ceux qui vénèrent encore le roi-sorcier. La sagesse commanderait de ne pas toucher à ce mystère, mais… puisqu’il a déjà suscité des convoitises, je préconise de le percer, puis d’en détruire l’objet. Encore faut-il découvrir ce que renferme la glace, en épargnant, dans la mesure du possible, le yéti, gardien involontaire des intérêts de Drustvar.</p>
     </div>
   </div>
 
@@ -922,47 +924,52 @@
   </div>
 
   <!-- ══ Caverne explorée ══ -->
-  <div class="popup" id="popup-caverne" role="dialog" aria-labelledby="t-caverne" tabindex="-1" style="--w: 370px; --c: #a63b2e;">
+  <div class="popup" id="popup-caverne" role="dialog" aria-labelledby="t-caverne" tabindex="-1" style="--w: 450px; --c: #a63b2e;">
     <button type="button" class="popup-close" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     <div class="popup-header">
       <span class="popup-gem" aria-hidden="true"></span>
       <h2 class="popup-title" id="t-caverne">Caverne explorée</h2>
     </div>
     <div class="popup-body">
-      <p>Des humains occupèrent cette grotte avant que le yéti n'en fasse son antre, probablement après les avoir chassés ou tués. Leur passage ne se laisse deviner qu'à travers un campement précaire éventré, dont les pauvres reliques résistent à toute datation comme à toute identification. Partisans de Roncécorche, trappeurs ou simples voyageurs ?</p>
-      <p>Des ossements traînent par endroits sur le sol, mais leur morphologie écarte une origine humaine et désigne plutôt des proies traînées jusqu'ici par la bête pour nourrir sa progéniture. Un petit au moins, embusqué derrière un rocher au fond.</p>
-      <p>Rien ne motive un examen plus poussé.</p>
+      <p>Cette grotte sert aujourd’hui d’antre à un yéti et sa progéniture, car au fond, derrière un rocher, se tenait embusqué au moins un petit. Sur le sol, d’où monte un froid tenace, gisent çà et là des ossements. Leur morphologie écarte une origine humaine et désigne plutôt des proies, traînées jusqu’ici par la bête pour nourrir ses jeunes.</p>
+      <p>Avant elle, des humains occupaient les lieux&nbsp;; le yéti ne s’y installa probablement qu’après les en avoir chassés, sinon tués. Seul un campement précaire et éventré atteste leur passage, et ses pauvres reliques ne se prêtent ni à une datation ni à une identification. Sectateurs de Roncécorche ou trappeurs&nbsp;? De simples voyageurs, peut-être. Je ne saurais trancher.</p>
+      <p>Selon moi, rien ne justifie d’examiner davantage cet endroit, car il ne présente aucun intérêt. Les yétis passent certes pour redoutables, et leur appétit insatiable cause des ravages dans leur milieu. Mais ceux-ci, en l’état, protégèrent malgré eux un site sensible, jadis possession des drust, et rendirent par là service à l’Amirauté de Kul Tiras.</p>
     </div>
   </div>
 
   <!-- ══ Refuge abandonné ══ -->
-  <div class="popup" id="popup-refuge" role="dialog" aria-labelledby="t-refuge" tabindex="-1" style="--w: 420px; --c: #4a9e6e;">
+  <div class="popup" id="popup-refuge" role="dialog" aria-labelledby="t-refuge" tabindex="-1" style="--w: 580px; --c: #4a9e6e;">
     <button type="button" class="popup-close" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     <div class="popup-header">
       <span class="popup-gem" aria-hidden="true"></span>
       <h2 class="popup-title" id="t-refuge">Refuge abandonné</h2>
     </div>
     <div class="popup-body">
-      <p>Cramponnée à la paroi rocheuse, une tour de guet domine la vallée des pâtis d'Ormefange, au sud. Tout l'édifice tient en une seule pièce. Le pan exposé au vide s'effrite, livrant passage au vent. L'isolation, bien que sommaire, reste tolérable pour quiconque consent à se passer de confort. La porte, dont le mécanisme s'est grippé, oblige à ramper dessous pour pénétrer à l'intérieur ou sortir, faute de quoi quelqu'un disposant d'une force suffisante pourrait peut-être la remettre en place.</p>
-      <p>Une cheminée occupe le centre du dispositif et paraît destinée à acheminer de l'huile vers le fanal qui coiffe le sommet du bâtiment, à la manière d'un phare. Le rayonnement doit porter loin, encore qu'aucun essai n'en confirme le fonctionnement. L'allumeur est sans doute bon à remplacer. Pour le reste, le mobilier se borne à quelques lits et à du matériel endommagé.</p>
+      <p>Accrochée à la paroi rocheuse, cette tour de guet domine au sud la vallée des Pâtis d’Ormefange. Une pièce unique compose tout l’édifice. Côté vide, le mur s’effrite et livre passage au vent&nbsp;; l’isolation, quoique sommaire, demeure tolérable pour qui consent à se passer de confort.</p>
+      <p>Au centre se dresse une cheminée, apparemment destinée à acheminer l’huile jusqu’au fanal qui couronne le bâtiment. Sa lumière doit porter loin, bien qu’aucun essai n’en ait confirmé le fonctionnement&nbsp;; l’allumeur, quant à lui, mériterait probablement d’être remplacé. Le mobilier se réduit à quelques lits et à du matériel endommagé.</p>
+      <p>Le mécanisme de la porte s’était grippé&nbsp;: lors de mon premier passage, il fallait ramper dessous pour entrer ou sortir. La seconde fois, j’amenai le forgeron Gibson Lourdenclume, qui brisa le mécanisme par maladresse, l’andouille…&nbsp;! Elle ne se relève donc plus du tout.</p>
+      <p>Ce jour-là, nous découvrîmes surtout un corps, identifié plus tard comme celui de monsieur Collet, époux de Bettie Collet&nbsp;; tous deux habitaient Corvenac. Le seigneur Corven l’aurait chargé d’en étudier les sols, afin de prévenir des coulées de boue, voire peut-être de neige, qui endommageraient le site minier local. Sa parenté compte un cousin, Bastien Collet, ancien mineur de Vaelsen.</p>
+      <p>Rien ne le prouve avec certitude, mais je reste persuadée qu’Osan Basserive, laquais de Roncécorche, tua monsieur Collet d’un coup de poignard en pleine poitrine (voir le rapport d’autopsie et celui traitant du Ravin de Rouillécorce). En tout cas, les dates concordent, et l’arme du crime également, d’après un témoignage reçu. Je l’ai d’ailleurs toujours en ma possession. Un simple couteau taillé dans un os de sanglier.</p>
+      <p>J’ignore ce qui aurait poussé Osan, si c’est bien lui, à frapper. La victime avait sans doute découvert quelque chose, ou s’était trouvée là au mauvais moment&nbsp;; il se peut aussi qu’elle ait prêté main-forte à ce chasseur dans une tâche quelconque avant d’être exécutée. Quoi qu’il en soit, je récupérai moi-même la dépouille, inhumée depuis au cimetière Tertrebois.</p>
     </div>
   </div>
 
   <!-- ══ Trouée des Hauts-Laments ══ -->
-  <div class="popup popup--exit" id="popup-trouee" role="dialog" aria-labelledby="t-trouee" tabindex="-1" style="--w: 400px; --dir: 180deg;">
+  <div class="popup popup--exit" id="popup-trouee" role="dialog" aria-labelledby="t-trouee" tabindex="-1" style="--w: 470px; --dir: 180deg;">
     <button type="button" class="popup-close" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     <div class="popup-header">
       <span class="popup-gem" aria-hidden="true"></span>
       <h2 class="popup-title" id="t-trouee">Trouée des Hauts-Laments</h2>
     </div>
     <div class="popup-body">
-      <p>À l'ouest, la Trouée des Hauts-Laments serpente à travers les montagnes et demeure la seule voie terrestre reliant Corvenac au reste de la région. Conjuguée à des reliefs presque infranchissables, cette unique brèche explique à elle seule l'isolement du bourg. Le passage débouche soit sur les contreforts menant à Griseroche, fief ancestral de la maison Forpin, soit sur les côtes occidentales de Drustvar, à proximité de Butte-du-Faucon et donc de la forêt Cramoisie.</p>
-      <p>Le secteur, sauvage et peu accueillant, vit jadis s'éteindre les derniers drust refoulés par la milice d'Arom Malvoie. La présence de bastions oubliés ou de ruines y demeure vraisemblable.</p>
+      <p>L’isolement de Corvenac tient à des reliefs presque infranchissables, que seule franchit la Trouée des Hauts-Laments. Ce passage, où s’engouffre le vent, serpente à l’ouest entre les montagnes et demeure l’unique voie terrestre reliant le bourg au reste de Drustvar. Il débouche soit sur les contreforts menant à Griseroche, fief ancestral de la maison Forpin, soit sur les côtes occidentales du pays, non loin de Butte-du-Faucon et donc de la forêt Cramoisie.</p>
+      <p>Jadis, les derniers drust, refoulés par la milice d’Arom Malvoie, s’éteignirent dans ce secteur sauvage et peu accueillant, où subsistent vraisemblablement des bastions oubliés et des ruines.</p>
+      <p>Le chasseur Osan Basserive et son père en étaient issus. Ils vendaient des peaux à Corvenac, jusqu’à ce que le père pérît. Osan s’éclipsa ensuite quelque temps&nbsp;; seule la Lumière sait quelle découverte, peut-être, le détourna de son allégeance. Lorsqu’il reparut, il se fit guide à travers les montagnes pour les groupes qui souhaitaient les franchir dans un sens ou dans l’autre. C’est ainsi qu’il mena vers l’est plusieurs villageois du bourg, où ils furent envoûtés par sorcellerie. Acquis à la cause de Roncécorche, il fut tué plus tard au Ravin de Rouillécorce&nbsp;; un rapport dédié relate cet épisode.</p>
     </div>
   </div>
 
   <!-- ══ Pâtis d'Ormefange ══ -->
-  <div class="popup popup--exit" id="popup-patis" role="dialog" aria-labelledby="t-patis" tabindex="-1" style="--w: 400px; --dir: 90deg;">
+  <div class="popup popup--exit" id="popup-patis" role="dialog" aria-labelledby="t-patis" tabindex="-1" style="--w: 430px; --dir: 90deg;">
     <button type="button" class="popup-close" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     <div class="popup-header">
       <span class="popup-gem" aria-hidden="true"></span>
@@ -972,22 +979,23 @@
       <button type="button" class="portrait-wrapper" data-lightbox="lightbox-corvenac" aria-label="Agrandir l'emblème de Corvenac">
         <img src="embleme.png" alt="" />
       </button>
-      <p>Les Pâtis d'Ormefange forment une petite vallée que les montagnes environnantes protègent des vents dominants. Malgré l'altitude, les saisons y demeurent assez clémentes pour permettre les travaux agricoles, même si l'hiver s'y montre parfois rude. La terre, riche et nourricière, soutient un élevage tourné principalement vers les moutons et les chèvres. L'humidité y règne toutefois sans partage, entretenant boue, sols spongieux, inondations et glissements de terrain.</p>
-      <p>L'unique bourg du secteur, Corvenac, prospère sous la protection de la maison Corven. Une mine de charbon, exploitée à proximité, garantit aux habitants une autonomie appréciable ainsi qu'un confort domestique acceptable.</p>
+      <p>Les montagnes qui entourent la petite vallée des Pâtis d’Ormefange la protègent des vents dominants. Malgré l’altitude, les saisons y restent assez clémentes pour qu’on s’adonne aux travaux agricoles, même si l’hiver sévit parfois durement.</p>
+      <p>L’humidité, en revanche, imprègne tout. Elle entretient la boue et les sols spongieux, et expose la vallée aux inondations ainsi qu’aux glissements de terrain. Ce sol riche et nourricier n’en porte pas moins un élevage centré surtout sur les moutons et les chèvres.</p>
+      <p>Corvenac, seul bourg du secteur, subsiste sous la protection de la maison Corven. La vie y est rude, et les jeunes habitants cherchent à partir, en quête d’un avenir meilleur, bien que la mine de charbon exploitée à proximité leur garantisse une autonomie relativement appréciable et un confort domestique acceptable.</p>
     </div>
   </div>
 
   <!-- ══ Gol Koval ══ -->
-  <div class="popup popup--exit" id="popup-golkoval" role="dialog" aria-labelledby="t-golkoval" tabindex="-1" style="--w: 400px; --dir: 0deg;">
+  <div class="popup popup--exit" id="popup-golkoval" role="dialog" aria-labelledby="t-golkoval" tabindex="-1" style="--w: 520px; --dir: 0deg;">
     <button type="button" class="popup-close" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     <div class="popup-header">
       <span class="popup-gem" aria-hidden="true"></span>
       <h2 class="popup-title" id="t-golkoval">Gol Koval</h2>
     </div>
     <div class="popup-body">
-      <p>Aux confins du domaine Tertrebois et de Val-Archer s'étendent des ruines ensevelies sous un glacier, longtemps laissées à l'abandon faute de visiteurs prêts à braver leur réputation. Durant la Quatrième Guerre, d'anciens cairns dressés sur place se réactivèrent, ranimant les morts-vivants drust qui dormaient sous la glace, ainsi que les golems de pierre nés de leur art. Leur destruction rendit le site à son isolement, si l'on excepte les quelques créatures égarées du Fléau déchaîné qui y errent depuis l'an trente-cinq.</p>
-      <p>Récemment, une reconnaissance conduite en compagnie de la forestière Rheva Grisnoyer et du druide Edward Mornebruine permit d'y distinguer une silhouette au sommet du glacier. L'ascension qui suivit livra des empreintes dont la trace mena jusqu'à la traverse de Lameblanche que présente la carte. Tout porte à croire qu'un sectateur de Roncécorche y cherchait une voie de descente, soit pour rejoindre Gol Koval, soit pour gagner l'est de Drustvar depuis la forêt Cramoisie en contournant la Ferté-d'Arom, et donc l'Ordre des Braises. À moins qu'il ne fuyait le yéti, pour peu que le massacre perpétré par ce dernier eût précédé la rencontre.</p>
-      <p>Une enquête conduite parallèlement à Gol Koval par l'inquisiteur Blancmistral et la sœur Everlange y dévoila la présence d'un autre groupe d'adorateurs des drust. Reste à déterminer s'il s'agit d'une cellule alliée à celle de Lameblanche, ou des deux ramifications d'une même secte.</p>
+      <p>Voici un an, lors d’une reconnaissance menée avec la forestière Rheva Grisnoyer et le druide Edward Mornebruine, une silhouette nous apparut au sommet du glacier qui ensevelit les ruines de Gol Koval, entre le domaine Tertrebois et le village de Val-Archer. J’en entrepris l’ascension, seule avec mon faucon, Mistral, et relevai des empreintes dont la piste conduisait à la traverse de Lameblanche, indiquée sur la carte.</p>
+      <p>Selon toute apparence, un sectateur de Roncécorche y cherchait une voie de descente&nbsp;: Osan Basserive, peut-être, dont un rapport retrace le parcours. Son dessein demeure incertain&nbsp;: gagner l’est de Drustvar depuis la forêt Cramoisie en contournant la Ferté-d’Arom, et donc l’Ordre des Braises, ou bien explorer les ruines du glacier de Gol Koval, en quête de quelque chose&nbsp;? Je l’ignore, mais au même moment, ou du moins peu après, une enquête menée par l’inquisiteur Blancmistral et sœur Everlange mit au jour un autre groupe d’adorateurs des drust, probablement liés eux aussi, de près ou de loin, à Roncécorche. Ils avaient enlevé des personnes, dont des enfants, avant d’être neutralisés&nbsp;; un document distinct relate cette affaire.</p>
+      <p>Et si le glacier se laissait gravir, ou descendre, par une autre voie que l’escalade&nbsp;? À moins que ces deux groupes de sectateurs n’aient cherché à entrer en contact&nbsp;?</p>
     </div>
   </div>
 
@@ -1041,9 +1049,9 @@
       <div class="lightbox-face lightbox-back">
         <h3>Yéti adulte</h3>
         <div class="lightbox-text">
-          <p>Malgré l'hiver, la bête arborait un pelage résolument sombre. Sur le qui-vive, elle patrouillait d'une caverne à l'autre sans relâche, quoique quelques phases de repos vinssent ponctuer sa marche. Du sang la maculait. Celui des sectateurs de Roncécorche, selon toute vraisemblance, qu'elle aura pour la plupart mis hors d'état de nuire. Tous, cependant ? Ou quelques-uns lui auraient-ils réchappé ?</p>
-          <p>Toujours est-il que l'attention portée à sa progéniture évoquait sans ambiguïté un comportement maternel, ce qui incline à y reconnaître une femelle. À moins qu'un mâle yéti ne manifeste de tels instincts ?</p>
-          <p>Ses traces sont les seules qui ont été relevées, sans que cela écarte pour autant la présence d'un ou plusieurs congénères (adultes) dans le secteur.</p>
+          <p>Du sang souillait la bête&nbsp;: selon toute vraisemblance, celui des sectateurs de Roncécorche, dont elle aura, pour la plupart, eu raison. Tous périrent-ils, ou quelques-uns lui échappèrent-ils&nbsp;? Je l’ignore, bien que le campement de la grotte qu’ils occupaient, plus à l’ouest, me fasse pencher pour une extermination complète. D’éventuels survivants ne seraient que deux, voire un seul.</p>
+          <p>Son pelage restait résolument sombre, malgré l’hiver. Sur le qui-vive, elle allait d’une caverne à l’autre en une patrouille incessante, que seules quelques phases de repos venaient interrompre.</p>
+          <p>Le soin qu’elle prodiguait à sa progéniture évoquait sans ambiguïté un comportement maternel, ce qui incline à reconnaître en elle une femelle. Reste à savoir si un mâle yéti pourrait manifester de tels instincts. En tout état de cause, ses traces sont les seules qui aient été relevées, sans que cela exclue la présence d’un ou plusieurs autres congénères adultes dans le secteur.</p>
         </div>
       </div>
     </div>
@@ -1063,8 +1071,9 @@
       <div class="lightbox-face lightbox-back">
         <h3>Maison Corven</h3>
         <div class="lightbox-text">
-          <p>Vassale des Malvoie, la maison Corven glisse aujourd'hui vers l'oubli. Sa fondation remonte à un fait d'armes isolé : Halric Corven, chevaucheur de griffon au service du seigneur Arthur Malvoie, sauva celui-ci d'une chute lors d'une entreprise aérienne, alors que le descendant d'Arom montait son griffon Bertram. L'exploit lui valut l'anoblissement et la charge de veiller sur les contreforts méridionaux des Pâtis d'Ormefange. La construction du château de Corvenac, lancée dans la foulée, greva durablement une lignée que l'isolement et une production tout juste suffisante condamnaient à l'asphyxie, tandis que les glissements de terrain fragilisaient l'édifice neuf.</p>
-          <p>Halric, d'ailleurs, perdit ses trois fils : Arven, l'aîné, tomba durant la Deuxième Guerre, Valric, le cadet, disparut à Corlain parmi les premières victimes présumées du Sabbat Malecarde, et Beral, le benjamin, dont la naissance avait coûté la vie à leur mère Aveline, fut englouti lors de la Quatrième Guerre sous les salves d'une canonnière de la Horde, probablement celle qui assiégea ensuite la Ferté-d'Arom. Ni Valric ni Beral ne laissèrent de corps.</p>
+          <p>Vassale des Malvoie, la maison Corven s’efface déjà des mémoires, alors que son fondateur, Halric Corven, vit encore. Celui-ci doit son rang à un fait d’armes&nbsp;: chevaucheur de griffon au service du seigneur Arthur Malvoie, il sauva son maître d’une chute lors d’une entreprise aérienne, tandis qu’Arthur montait Bertram, son griffon. L’exploit lui valut l’anoblissement et la garde des contreforts méridionaux des Pâtis d’Ormefange.</p>
+          <p>Le château de Corvenac, mis en chantier aussitôt, endetta la maison dès ses débuts. Isolé, le domaine ne produit que le strict nécessaire et ne dégage aucun surplus qui permette de rembourser. Encore neuf, l’édifice tomberait déjà en ruines, lui aussi, au gré des glissements de terrain qui ébranlent ses fondations.</p>
+          <p>Le seigneur Halric perdit en outre ses trois fils. Arven, l’aîné, tomba pendant la Deuxième Guerre. Le cadet, Valric, disparut à Corlain, et l’on présume qu’il compta parmi les premières victimes du sabbat Malecarde (Existerait-il un lien avec Eliana Sandrenon&nbsp;? Il éclairerait la présence du médaillon, et sans doute d’autres points encore obscurs, même s’il serait prématuré de bâtir une conclusion sur de simples conjectures…). Quant à Beral, le benjamin, dont la naissance avait coûté la vie à leur mère, Aveline, il périt au cours de la Quatrième Guerre sous les salves d’une canonnière de la Horde, vraisemblablement celle qui assiégea plus tard la Ferté-d’Arom. Les corps de Valric et de Beral ne furent jamais retrouvés.</p>
         </div>
       </div>
     </div>
